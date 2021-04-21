@@ -1,0 +1,12 @@
+#ifndef CAMERACORE_GLOBAL_H
+#define CAMERACORE_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(CAMERACORE_LIBRARY)
+#  define CAMERACORESHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define CAMERACORESHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // CAMERACORE_GLOBAL_H
