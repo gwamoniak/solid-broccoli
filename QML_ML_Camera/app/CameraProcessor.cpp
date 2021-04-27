@@ -36,14 +36,14 @@ void CameraProcessor::setCamera(QVariant vCamera)
     m_camera->focus()->setFocusMode(QCameraFocus::ContinuousFocus);
     m_camera->focus()->setFocusPointMode(QCameraFocus::FocusPointAuto);
 
-//    QCameraInfo cameraInfo(*m_camera);
-//    QString camera_name = cameraInfo.deviceName();
+    QCameraInfo cameraInfo(*m_camera);
+    QString camera_name = cameraInfo.deviceName();
 
-//    int cameraIDX = camera_name.mid(camera_name.length()-1,1).toInt(); //extract camera ID from string
-//    qDebug(logInfo()) << "ID: " <<cameraIDX;
-//    m_videoCapture.open(cameraIDX);
-//    if(!m_videoCapture.isOpened())
-//        qDebug(logWarning())<<"Cannot open camera";
+    int cameraIDX = camera_name.mid(camera_name.length()-1,1).toInt(); //extract camera ID from string
+    qDebug(logInfo()) << "ID: " <<cameraIDX;
+   // m_videoCapture.open(cameraIDX);
+   // if(!m_videoCapture.isOpened())
+   //     qDebug(logWarning())<<"Cannot open camera";
 
 
 }

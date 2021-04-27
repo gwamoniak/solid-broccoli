@@ -9,16 +9,14 @@ CONFIG += c++17
 SOURCES += \
         main.cpp \
     CameraProcessor.cpp \
-    PictureProvider.cpp \
-    MovieProcessor.cpp
+    PictureProvider.cpp
 
 RESOURCES += qml.qrc
 CONFIG+=qml_debug
 
 HEADERS += \
     CameraProcessor.h \
-    PictureProvider.h \
-    MovieProcessor.h
+    PictureProvider.h
 
 
 VERSION = 1.0

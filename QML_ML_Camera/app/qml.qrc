@@ -7,7 +7,6 @@
         <file>qmldir</file>
         <file>ToolBarTheme.qml</file>
         <file>PageTheme.qml</file>
-        <file>InputDialog.qml</file>
         <file>AlbumPage.qml</file>
         <file>PicturePage.qml</file>
         <file>MainPage.qml</file>
@@ -29,25 +28,9 @@
         <file>images/png/quit.png</file>
         <file>CameraPage.qml</file>
         <file>images/png/save_photo.png</file>
-        <file>images/png/record.png</file>
-        <file>images/png/stop_recording.png</file>
         <file>LoggerPage.qml</file>
         <file>images/png/open_log.png</file>
         <file>images/png/home_button.png</file>
-        <file>MovieAlbumListPage.qml</file>
-        <file>MovieAlbumPage.qml</file>
-        <file>MoviePage.qml</file>
-        <file>images/png/add_movie.png</file>
-        <file>images/png/add_movie_gallery.png</file>
-        <file>images/png/delete_movie.png</file>
-        <file>images/png/delete_movie_gallery.png</file>
-        <file>images/png/rename_movie.png</file>
-        <file>images/png/rename_movie_gallery.png</file>
-        <file>images/png/movie_gallery.png</file>
-        <file>images/png/backward_player.png</file>
-        <file>images/png/forward_player.png</file>
-        <file>images/png/pause_player.png</file>
-        <file>images/png/play_player.png</file>
-        <file>images/png/stop_player.png</file>
+        <file>InputDialog.qml</file>
     </qresource>
 </RCC>

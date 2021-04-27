@@ -10,7 +10,7 @@ import "."
 
 PageTheme {
     width: parent.width
-     property string pictureName
+    property string pictureName
 
     RoundButton {
         id: drawerOpen
@@ -32,9 +32,9 @@ PageTheme {
         }
     }
 
-   toolbarButtons:ColumnLayout{
-   //     width: 1280
-     //   height: 80
+    toolbarButtons:ColumnLayout{
+        //     width: 1280
+        //   height: 80
         anchors.right: parent.right
         width: parent.width /13
         height: parent.height
@@ -62,28 +62,28 @@ PageTheme {
             }
 
         }
-        RoundButton {
-            id:movieAlbumButton
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
-            smooth: true
-            antialiasing: true
-            //text: qsTr("ALBUM")
-            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
-            background: Image {
-                source: "qrc:/images/png/movie_gallery.png"
-                width: 65
-                height: 65
-            }
+//        RoundButton {
+//            id:movieAlbumButton
+//            Layout.preferredHeight:  65
+//            Layout.preferredWidth:   65
+//            smooth: true
+//            antialiasing: true
+//            //text: qsTr("ALBUM")
+//            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
+//            background: Image {
+//                source: "qrc:/images/png/movie_gallery.png"
+//                width: 65
+//                height: 65
+//            }
 
-            //font.pointSize: 18
-            //anchors.right: quit.left
-            //rightPadding: 5
-            onClicked: {
-                pageStack.push("qrc:/MovieAlbumListPage.qml")
-            }
-
-        }
+//            //font.pointSize: 18
+//            //anchors.right: quit.left
+//            //rightPadding: 5
+//            onClicked: {
+//                pageStack.push("qrc:/MovieAlbumListPage.qml")
+//            }
+//
+//        }
         RoundButton {
             id: cameraPage
             Layout.preferredHeight:  65
@@ -121,70 +121,75 @@ PageTheme {
                 Qt.quit()
             }
         }
-   }
+    }
 
-   Drawer {
-       id: settingsDrawer
-       y: header.height
-       height: window.height - header.height
-       width: 0.27* window.width
-       Column{
-           id: settingButtons
-           spacing: 1
-           //height:0.15 *window.width
-           ComboBox
-           {
-               id: cameraCombo
-               Layout.fillWidth: true
-               Layout.alignment: Qt.AlignRight| Qt.AlignTop
-               model: QtMultimedia.availableCameras
-               textRole: "displayName"
-               delegate: ItemDelegate
-               {
-                   text: modelData.displayName
-               }
-               onCurrentIndexChanged:
-               {
-                   CameraPage.camera.stop()
-                   CameraPage.camera.deviceId = model[currentIndex].deviceId
-                   CameraPage.camera.start()
-               }
-           }
-           Button {
-                   id: loggerButton
-                   width: cameraCombo.width
-                   Layout.fillWidth: true
-                   Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                   text: qsTr("Logger")
-                   smooth: true
+    Drawer {
+        id: settingsDrawer
+        y: header.height
+        height: window.height - header.height
+        width: 0.27* window.width
+        Rectangle {
+            anchors.fill: parent
+            color: Style.toolBackground
 
-                   onClicked: {
-                       pageStack.push("qrc:/LoggerPage.qml")
-                       settingsDrawer.close()
-                   }
-           }
+            Column{
+                id: settingButtons
+                spacing: 1
+                //height:0.15 *window.width
+                ComboBox
+                {
+                    id: cameraCombo
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight| Qt.AlignTop
+                    model: QtMultimedia.availableCameras
+                    textRole: "displayName"
+                    delegate: ItemDelegate
+                    {
+                        text: modelData.displayName
+                    }
+                    onCurrentIndexChanged:
+                    {
+                        CameraPage.camera.stop()
+                        CameraPage.camera.deviceId = model[currentIndex].deviceId
+                        CameraPage.camera.start()
+                    }
+                }
+                Button {
+                    id: loggerButton
+                    width: cameraCombo.width
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight| Qt.AlignTop
+                    text: qsTr("Logger")
+                    smooth: true
 
-       }
-       ListView {
-           id: listView
-           width: settingsDrawer.width
-           height: settingsDrawer.height - settingButtons.height
-           anchors.top: settingButtons.bottom
-           model:2
+                    onClicked: {
+                        pageStack.push("qrc:/LoggerPage.qml")
+                        settingsDrawer.close()
+                    }
+                }
 
-           delegate: SettingSwitcher{
+            }
+            ListView {
+                id: listView
+                width: settingsDrawer.width
+                height: settingsDrawer.height - settingButtons.height
+                anchors.top: settingButtons.bottom
+                model:2
 
-               text: qsTr("Title of Setting %1").arg(index + 1)
-               font.bold: true
-               font.pointSize: 12
+                delegate: SettingSwitcher{
 
-           }
+                    text: qsTr("Title of Setting %1").arg(index + 1)
+                    font.bold: true
+                    font.pointSize: 12
 
-           ScrollIndicator.vertical: ScrollIndicator { }
+                }
 
-       }
+                ScrollIndicator.vertical: ScrollIndicator { }
 
-   }
+            }
+        }
+
+    }
 
 
 }

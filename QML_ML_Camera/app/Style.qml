@@ -5,10 +5,10 @@ QtObject {
     property color text: "#fffafa" //"#3daee9"
     property color pictureText: "#1e90ff"
 
-    property color windowBackground:  "#eff0f1"
-    property color toolBackground:    "#eff0f1"
-    property color pageBackground:    "#b22222" //"#fcfcfc"
-    property color buttonBackground:  "#d0d1d2"
+    property color windowBackground:  "#bd93f9"
+    property color toolBackground:    "#bd93f9"
+    property color pageBackground:    "#6272a4" //"#fcfcfc"
+    property color buttonBackground:  "#d0d1d2" //#50fa7b
 
     property color itemHighlight:     "#3daee9"
 

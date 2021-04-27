@@ -27,10 +27,8 @@ DatabaseManager& DatabaseManager::instance()
 
 DatabaseManager::DatabaseManager(const QString& _path) :
     m_sqlDataBase(new QSqlDatabase(QSqlDatabase::addDatabase("QSQLITE"))),
-    m_albumDao(*m_sqlDataBase),
-    m_malbumDao(*m_sqlDataBase),
-    m_pictureDao(*m_sqlDataBase),
-    m_movieDao(*m_sqlDataBase),
+    m_albumDao(*m_sqlDataBase),  
+    m_pictureDao(*m_sqlDataBase),   
     m_loggerDao(*m_sqlDataBase)
 {
     m_sqlDataBase->setDatabaseName(_path);
@@ -38,10 +36,8 @@ DatabaseManager::DatabaseManager(const QString& _path) :
     bool openStatus = m_sqlDataBase->open();
     qDebug(logInfo) << "Database connection: " << (openStatus ? "OK" : "Error");
 
-    m_albumDao.init();
-    m_malbumDao.init();
-    m_pictureDao.init();
-    m_movieDao.init();
+    m_albumDao.init();   
+    m_pictureDao.init();   
     m_loggerDao.init();
 }
 

@@ -8,7 +8,6 @@
 
 #include "AlbumDAO.h"
 #include "PictureDAO.h"
-#include "MovieDAO.h"
 #include "LoggerDAO.h"
 #include "MovieAlbumDAO.h"
 
@@ -34,9 +33,7 @@ private:
 
 public:
     const AlbumDAO m_albumDao;
-    const MovieAlbumDAO m_malbumDao;
     const PictureDAO m_pictureDao;
-    const MovieDAO m_movieDao;
     const LoggerDAO m_loggerDao;
 };
 

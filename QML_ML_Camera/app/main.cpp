@@ -5,14 +5,15 @@
 
 #include "AlbumModel.h"
 #include "PictureModel.h"
-#include "MovieModel.h"
-#include "MovieAlbumModel.h"
 #include "logger.h"
 #include "LoggerModel.h"
 #include "PictureProvider.h"
 #include "CameraProcessor.h"
-#include "MovieProcessor.h"
 
+
+// icons from
+//<div>Icons made by <a href="https://www.flaticon.com/authors/srip" title="srip">srip</a>
+//from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
 int main(int argc, char *argv[])
 {
@@ -32,9 +33,8 @@ int main(int argc, char *argv[])
 
 
     AlbumModel   albumModel;
-    MovieAlbumModel movieAlbumModel;
     PictureModel pictureModel(albumModel);
-    MovieModel   movieModel(movieAlbumModel);
+
 
     LoggerModel loggerModel;
 
@@ -43,20 +43,13 @@ int main(int argc, char *argv[])
 
 
     qmlRegisterType<CameraProcessor>("solid.broccoli", 1, 0, "CameraProcessor");
-    qmlRegisterType<MovieProcessor>("solid.broccoli", 1, 0,   "MovieProcessor");
     context->setContextProperty("thumbnailSize",PictureProvider::THUMBNAIL_SIZE.width());
     context->setContextProperty("albumModel",   &albumModel);
-    context->setContextProperty("movieAlbumModel",   &movieAlbumModel);
     context->setContextProperty("pictureModel", &pictureModel);
-    context->setContextProperty("movieModel",   &movieModel);
     context->setContextProperty("loggerModel", &loggerModel);
 
     context->setContextProperty("appPath", appPath);
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
-    engine.addImageProvider("movies", new MovieProvider(&movieModel));
-    context->setContextProperty("movieProcessor", new MovieProcessor(&movieModel));
-
-
 
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));

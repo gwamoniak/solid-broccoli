@@ -87,45 +87,47 @@ PageTheme {
         }
 
     }
-    RoundButton
-    {
-        id: recordMovie
-        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        Layout.preferredHeight:  65
-        Layout.preferredWidth:   65
-        background: Image {
-            source: "qrc:/images/png/record.png"
-            width: 65
-            height: 65
-            smooth: true
-        }
+    // Recording will be added later!!!!!
+
+//    RoundButton
+//    {
+//        id: recordMovie
+//        Layout.alignment: Qt.AlignRight | Qt.AlignTop
+//        Layout.preferredHeight:  65
+//        Layout.preferredWidth:   65
+//        background: Image {
+//            source: "qrc:/images/png/record.png"
+//            width: 65
+//            height: 65
+//            smooth: true
+//        }
 
 
-        onClicked: {
-            console.log("Record")
-            //cameraProcessor.recordMovie()
-        }
+//        onClicked: {
+//            console.log("Record")
+//            //cameraProcessor.recordMovie()
+//        }
 
-    }
-    RoundButton
-    {
-        id: stopRecording
-        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        Layout.preferredHeight:  65
-        Layout.preferredWidth:   65
-        background: Image {
-            source: "qrc:/images/png/stop_recording.png"
-            width: 65
-            height: 65
-            smooth: true
-        }
+//    }
+//    RoundButton
+//    {
+//        id: stopRecording
+//        Layout.alignment: Qt.AlignRight | Qt.AlignTop
+//        Layout.preferredHeight:  65
+//        Layout.preferredWidth:   65
+//        background: Image {
+//            source: "qrc:/images/png/stop_recording.png"
+//            width: 65
+//            height: 65
+//            smooth: true
+//        }
 
 
-        onClicked: {
-            console.log("stop recording")
-            cameraProcessor.stopRecording()
-        }
+//        onClicked: {
+//            console.log("stop recording")
+//            cameraProcessor.stopRecording()
+//        }
 
-    }
+//    }
     }
 }
