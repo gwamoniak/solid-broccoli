@@ -8,7 +8,8 @@ QtObject {
     property color windowBackground:  "#bd93f9"
     property color toolBackground:    "#bd93f9"
     property color pageBackground:    "#6272a4" //"#fcfcfc"
-    property color buttonBackground:  "#d0d1d2" //#50fa7b
+    property color buttonBackground:  "#1e90ff" //#50fa7b
+
 
     property color itemHighlight:     "#3daee9"
 

@@ -19,12 +19,19 @@ PageTheme {
         //text: qsTr("::")
         //font.pointSize: 18
         Layout.alignment: Qt.AlignRight| Qt.AlignTop
-        background: Image {
-            source: "qrc:/images/png/cogwheel.png"
-            width: 65
-            height: 65
-            smooth: true
-        }
+        icon.source:"qrc:/images/png/cogwheel.png"
+        icon.width :65
+        icon.height:65
+        icon.color: Style.buttonBackground
+//        background: Image {
+//            source: "qrc:/images/png/cogwheel.png"
+//            width: 65
+//            height: 65
+//            smooth: true
+//            Material.background: Material.color(Style.buttonBackground)
+//        }
+
+
         onClicked: {
             settingsDrawer.open()
             if(settingsDrawer.opened)
