@@ -14,23 +14,18 @@ PageTheme {
 
     RoundButton {
         id: drawerOpen
-        Layout.preferredHeight:  70
-        Layout.preferredWidth:   70
+        Layout.preferredHeight:  Style.roundButtonHeight
+        Layout.preferredWidth:   Style.roundButtonWidth
         //text: qsTr("::")
         //font.pointSize: 18
         Layout.alignment: Qt.AlignRight| Qt.AlignTop
         icon.source:"qrc:/images/png/cogwheel.png"
-        icon.width :65
-        icon.height:65
-        icon.color: Style.buttonBackground
-//        background: Image {
-//            source: "qrc:/images/png/cogwheel.png"
-//            width: 65
-//            height: 65
-//            smooth: true
-//            Material.background: Material.color(Style.buttonBackground)
-//        }
-
+        icon.width :Style.roundButtonWidth
+        icon.height:Style.roundButtonHeight
+        background: Rectangle {
+            radius: Style.roundButtonRadius
+            color: Style.buttonBackground
+        }
 
         onClicked: {
             settingsDrawer.open()
@@ -49,16 +44,18 @@ PageTheme {
 
         RoundButton {
             id:pictureAlbumButton
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
             smooth: true
             antialiasing: true
             //text: qsTr("ALBUM")
             Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
-            background: Image {
-                source: "qrc:/images/png/album_gallery.png"
-                width: 65
-                height: 65
+            icon.source: "qrc:/images/png/album_gallery.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonGreen
             }
 
             //font.pointSize: 18
@@ -93,17 +90,18 @@ PageTheme {
 //        }
         RoundButton {
             id: cameraPage
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
             smooth: true
 
             Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
-            background: Image {
-                source: "qrc:/images/png/camera.png"
-                width: 65
-                height: 65
+            icon.source: "qrc:/images/png/camera.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonYellow
             }
-
             onClicked: {
                 pageStack.push("qrc:/CameraPage.qml")
             }
@@ -111,19 +109,19 @@ PageTheme {
 
         RoundButton {
             id: quit
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
             smooth: true
             //text: qsTr("-Quit-")
             Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
-            background: Image {
-                source: "qrc:/images/png/quit.png"
-                width: 65
-                height: 65
+            icon.source: "qrc:/images/png/quit.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonRed
             }
 
-            //font.pointSize: 18
-            //anchors.top: albumButton.bottom
             onClicked: {
                 Qt.quit()
             }
@@ -136,6 +134,7 @@ PageTheme {
         height: window.height - header.height
         width: 0.27* window.width
         Rectangle {
+            id: drawerRect
             anchors.fill: parent
             color: Style.toolBackground
 
@@ -146,6 +145,7 @@ PageTheme {
                 ComboBox
                 {
                     id: cameraCombo
+                    width: drawerRect.width
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignRight| Qt.AlignTop
                     model: QtMultimedia.availableCameras
@@ -160,10 +160,11 @@ PageTheme {
                         CameraPage.camera.deviceId = model[currentIndex].deviceId
                         CameraPage.camera.start()
                     }
+
                 }
                 Button {
                     id: loggerButton
-                    width: cameraCombo.width
+                    width: drawerRect.width
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignRight| Qt.AlignTop
                     text: qsTr("Logger")
@@ -187,7 +188,7 @@ PageTheme {
 
                     text: qsTr("Title of Setting %1").arg(index + 1)
                     font.bold: true
-                    font.pointSize: 12
+                    font.pointSize: 10
 
                 }
 

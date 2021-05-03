@@ -22,17 +22,18 @@ footer: RoundButton{
         id: homeButton
         width: 70
         height: 70
-        x: parent.width/2.2
+        //x: parent.width/2.2
 
         anchors.bottom: parent.bottom
         Layout.alignment: Qt.AlignBottom| Qt.AlignCenter
         Layout.preferredHeight:  70
         Layout.preferredWidth:   70
-        background: Image {
-            source: "qrc:/images/png/home_button.png"
-            width: 70
-            height: 70
-            smooth: true
+        icon.source:"qrc:/images/png/home_button.png"
+        icon.width :Style.roundButtonWidth
+        icon.height:Style.roundButtonHeight
+        background: Rectangle {
+            radius: Style.roundButtonRadius
+            color: Style.roundButtonHome
         }
 
         onClicked: {
@@ -65,14 +66,15 @@ footer: RoundButton{
             spacing: 5
             RoundButton {
                 id: backButton
-                Layout.preferredHeight:  65
-                Layout.preferredWidth:   65
+                Layout.preferredHeight:  Style.roundButtonHeight
+                Layout.preferredWidth:   Style.roundButtonWidth
                 Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                background: Image {
-                    source: "qrc:/images/png/back.png"
-                    width: 65
-                    height: 65
-                    smooth: true
+                icon.source:"qrc:/images/png/back.png"
+                icon.width :Style.roundButtonWidth
+                icon.height:Style.roundButtonHeight
+                background: Rectangle {
+                    radius: Style.roundButtonRadius
+                    color: Style.buttonBackground
                 }
 
                 onClicked: {

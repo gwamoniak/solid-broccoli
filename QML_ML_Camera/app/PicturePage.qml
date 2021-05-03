@@ -16,14 +16,15 @@ PageTheme {
 //            text: qsTr("RENAME")
 //            font.pointSize: 18
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
             antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/rename_photo.png"
-                width: 65
-                height: 65
-                smooth: true
+            icon.source:"qrc:/images/png/rename_photo.png"
+            icon.width :Style.roundButtonWidth -20
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonYellow
             }
             onClicked: {
                 renamePhotoDialog.open()
@@ -32,14 +33,15 @@ PageTheme {
         RoundButton {
             //text: qsTr("DELETE")
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
             antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/delete_photo.png"
-                width: 65
-                height: 65
-                smooth: true
+            icon.source:"qrc:/images/png/delete_photo.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonRed
             }
             onClicked: {
                 pictureModel.removeRows(pictureIndex, 1)

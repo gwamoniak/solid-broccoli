@@ -7,17 +7,19 @@ import "."
 PageTheme {
     toolbarTitle: "Picture Albums"
     toolbarButtons: ToolButton {
-        Layout.alignment: Qt.AlignRight | Qt.AlignTop
+
         //text:qsTr("ADD")
         //font.pointSize: 18
-        Layout.preferredHeight:  65
-        Layout.preferredWidth:   65
-        antialiasing: true
-        background: Image {
-            source: "qrc:/images/png/add_album_gallery.png"
-            width: 65
-            height: 65
-            smooth: true
+        Layout.preferredHeight:  Style.roundButtonHeight
+        Layout.preferredWidth:   Style.roundButtonWidth
+        //antialiasing: true
+        Layout.alignment: Qt.AlignRight | Qt.AlignTop
+        icon.source:"qrc:/images/png/add_album_gallery.png"
+        icon.width :Style.roundButtonWidth -10
+        icon.height:Style.roundButtonHeight -10
+        background: Rectangle {
+            radius: Style.roundButtonRadius
+            color: Style.roundButtonGreen
         }
         onClicked: {
             newAlbumDialog.open()

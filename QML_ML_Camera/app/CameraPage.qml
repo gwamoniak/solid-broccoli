@@ -70,13 +70,14 @@ PageTheme {
         id: savePicture
 
         Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        Layout.preferredHeight:  65
-        Layout.preferredWidth:   65
-        background: Image {
-            source: "qrc:/images/png/save_photo.png"
-            width: 65
-            height: 65
-            smooth: true
+        Layout.preferredHeight:  Style.roundButtonHeight
+        Layout.preferredWidth:   Style.roundButtonWidth
+        icon.source:"qrc:/images/png/save_photo.png"
+        icon.width :Style.roundButtonWidth -15
+        icon.height:Style.roundButtonHeight
+        background: Rectangle {
+            radius: Style.roundButtonRadius
+            color: Style.roundButtonGreen
         }
 
 

@@ -16,14 +16,15 @@ PageTheme {
             //text: qsTr("ADD")
             //font.pointSize: 18
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
-            //antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/add_photo.png"
-                width:  65
-                height: 65
-                smooth: true
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
+            antialiasing: true
+            icon.source:"qrc:/images/png/add_photo.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonGreen
             }
 
             onClicked: {
@@ -36,14 +37,15 @@ PageTheme {
 //            text: qsTr("RENAME")
 //            font.pointSize: 18
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
-            //antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/rename_album_gallery.png"
-                width:  65
-                height: 65
-                smooth: true
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
+            antialiasing: true
+            icon.source:"qrc:/images/png/rename_album_gallery.png"
+            icon.width :Style.roundButtonWidth -20
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonYellow
             }
             onClicked: {
                 renameAlbumDialog.open()
@@ -54,14 +56,15 @@ PageTheme {
             //text: qsTr("DELETE")
             //font.pointSize: 18
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
-            //antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/delete_album_gallery.png"
-                width: 65
-                height: 65
-                smooth: true
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
+            antialiasing: true
+            icon.source:"qrc:/images/png/delete_album_gallery.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonRed
             }
             onClicked: {
                 albumModel.removeRows(albumRowIndex, 1)

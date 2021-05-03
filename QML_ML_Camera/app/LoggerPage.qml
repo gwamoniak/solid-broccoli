@@ -17,13 +17,15 @@ PageTheme {
             //text: qsTr("open LOG")
             //font.pointSize: 12
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  65
-            Layout.preferredWidth:   65
-            //antialiasing: true
-            background: Image {
-                source: "qrc:/images/png/open_log.png"
-                width:  65
-                height: 65
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
+            antialiasing: true
+            icon.source:"qrc:/images/png/open_log.png"
+            icon.width :Style.roundButtonWidth
+            icon.height:Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonGreen
             }
 
             onClicked: {
