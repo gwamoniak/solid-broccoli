@@ -23,7 +23,7 @@ public:
         FilePathRole,
         NameRole,
     };
-    PictureModel(const AlbumModel& _albumModel, QObject* parent = nullptr);
+    PictureModel(DatabaseManager& db, const AlbumModel& _albumModel, QObject* parent = nullptr);
 
     QModelIndex addPicture(const Picture& _picture);
     Q_INVOKABLE void addPictureFromUrl(const QUrl& _FileUrl);

@@ -41,12 +41,13 @@ PageTheme {
     ListView {
 
         id: albumListPage
-        anchors.topMargin: 80
+        anchors.margins: 16
+        anchors.rightMargin: Style.roundButtonWidth + 24
         model: albumModel
         spacing: 5
         anchors.fill: parent
         delegate: Rectangle{
-            width: parent.width - parent.width/13
+            width: albumListPage.width
             height: 120
             color: Style.buttonBackground
 

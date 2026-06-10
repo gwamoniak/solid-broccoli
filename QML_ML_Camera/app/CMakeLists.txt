@@ -1,8 +1,8 @@
 qt_add_executable(QML_ML_Camera_App
     MACOSX_BUNDLE
     main.cpp
-    CameraProcessor.cpp
-    CameraProcessor.h
+    CameraService.cpp
+    CameraService.h
     PictureProvider.cpp
     PictureProvider.h
 )
@@ -66,4 +66,8 @@ target_include_directories(QML_ML_Camera_App
     PRIVATE
         ${CMAKE_SOURCE_DIR}/camera-core
         ${CMAKE_SOURCE_DIR}/logger-core
+)
+
+set_target_properties(QML_ML_Camera_App PROPERTIES
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
 )

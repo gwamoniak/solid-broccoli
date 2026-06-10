@@ -17,6 +17,8 @@ qt_add_library(camera-core SHARED
     PictureDAO.h
     PictureModel.cpp
     PictureModel.h
+    StorageLocations.cpp
+    StorageLocations.h
     camera-core_global.h
 )
 

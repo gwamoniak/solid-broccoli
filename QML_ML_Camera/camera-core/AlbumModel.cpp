@@ -3,9 +3,9 @@
 
 using namespace std;
 
-AlbumModel::AlbumModel(QObject* parent) :
+AlbumModel::AlbumModel(DatabaseManager& db, QObject* parent) :
     QAbstractListModel(parent),
-    m_sqlDB(DatabaseManager::instance()),
+    m_sqlDB(db),
     m_vAlbums(m_sqlDB.m_albumDao.albums())
 {
         qDebug(logInfo()) << "Album has been created!";

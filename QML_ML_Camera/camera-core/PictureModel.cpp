@@ -8,9 +8,9 @@
 
 using namespace std;
 
-PictureModel::PictureModel(const AlbumModel& _albumModel, QObject* parent) :
+PictureModel::PictureModel(DatabaseManager& db, const AlbumModel& _albumModel, QObject* parent) :
     QAbstractListModel(parent),
-    m_sqlDB(DatabaseManager::instance()),
+    m_sqlDB(db),
     m_nAlbumID(-1),
     m_vPictures(new vector<unique_ptr<Picture>>())
 {

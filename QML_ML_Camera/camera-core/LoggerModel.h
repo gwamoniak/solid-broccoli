@@ -12,7 +12,7 @@ class CAMERACORESHARED_EXPORT LoggerModel : public QSqlQueryModel
     Q_OBJECT
 
 public:
-    LoggerModel(QObject* parent = nullptr);
+    explicit LoggerModel(DatabaseManager& db, QObject* parent = nullptr);
 
     enum Roles {
         IdRole = Qt::UserRole + 1,      // id
@@ -39,6 +39,7 @@ private:
 
 public slots:
     void readCSV(QString const &_fileName);
+    Q_INVOKABLE void readLatestLog();
 
 };
 

@@ -20,7 +20,7 @@ public:
         NameRole,
     };
 
-    AlbumModel(QObject* parent = nullptr);
+    explicit AlbumModel(DatabaseManager& db, QObject* parent = nullptr);
 
     QModelIndex addAlbum(const Album& _album);
     Q_INVOKABLE void addAlbumFromName(const QString& _name);

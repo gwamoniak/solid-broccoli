@@ -1,61 +1,56 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QDir>
+#include <QUrl>
 
 #include "AlbumModel.h"
 #include "PictureModel.h"
+#include "DatabaseManager.h"
+#include "StorageLocations.h"
 #include "logger.h"
 #include "LoggerModel.h"
 #include "PictureProvider.h"
-#include "CameraProcessor.h"
+#include "CameraService.h"
 
-
-// icons from
-//<div>Icons made by <a href="https://www.flaticon.com/authors/srip" title="srip">srip</a>
-//from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
 int main(int argc, char *argv[])
 {
-  // qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-   // QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-
     QGuiApplication app(argc, argv);
+    QCoreApplication::setOrganizationName("SolidBroccoli");
+    QCoreApplication::setApplicationName("SolidBroccoli");
 
     Logger log;
-    if(log.InitLogger())
+    if (log.InitLogger(StorageLocations::logsDir()))
     {
         qDebug(logInfo()) << "Application has started!";
+    }
+    qDebug(logInfo()) << "Application data root:" << StorageLocations::root();
 
+    DatabaseManager db;
+    if (!db.isOpen()) {
+        qWarning(logCritical()) << "Could not open database:"
+                                << DatabaseManager::defaultDatabasePath();
     }
 
-    QUrl appPath(QDir::currentPath());
-
-
-    AlbumModel   albumModel;
-    PictureModel pictureModel(albumModel);
-
-
-    LoggerModel loggerModel;
+    AlbumModel   albumModel(db);
+    PictureModel pictureModel(db, albumModel);
+    LoggerModel  loggerModel(db);
+    CameraService cameraService;
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
 
-
-    qmlRegisterType<CameraProcessor>("solid.broccoli", 1, 0, "CameraProcessor");
-    context->setContextProperty("thumbnailSize",PictureProvider::THUMBNAIL_SIZE.width());
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
+    context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());
     context->setContextProperty("albumModel",   &albumModel);
     context->setContextProperty("pictureModel", &pictureModel);
-    context->setContextProperty("loggerModel", &loggerModel);
-
-    context->setContextProperty("appPath", appPath);
+    context->setContextProperty("loggerModel",  &loggerModel);
+    context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
-
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;
 
-    qDebug(logInfo()) << "Application has exited!";
     return app.exec();
 }

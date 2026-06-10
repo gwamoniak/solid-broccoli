@@ -5,30 +5,37 @@
 
 #include <QString>
 
+#include "camera-core_global.h"
 
 #include "AlbumDAO.h"
 #include "PictureDAO.h"
 #include "LoggerDAO.h"
-#include "MovieAlbumDAO.h"
 
 class QSqlQuery;
 class QSqlDatabase;
 
-const QString DATABASE_FILENAME = "solidBroccoli_Gallery.db";
-
-class DatabaseManager
+// Owns one SQLite connection and the DAOs operating on it.
+// Construct explicitly and inject by reference into the models;
+// pass ":memory:" as path for tests. Each instance uses a unique
+// connection name so several databases can coexist in one process.
+class CAMERACORESHARED_EXPORT DatabaseManager
 {
 public:
-    static void debugQuery(const QSqlQuery& _query);
-
-    static DatabaseManager& instance();
+    explicit DatabaseManager(const QString& path = defaultDatabasePath());
     ~DatabaseManager();
 
-protected:
-    DatabaseManager(const QString& _path = DATABASE_FILENAME);
-    DatabaseManager& operator=(const DatabaseManager& rhs);
+    DatabaseManager(const DatabaseManager&) = delete;
+    DatabaseManager& operator=(const DatabaseManager&) = delete;
+
+    static QString defaultDatabasePath();
+    static void debugQuery(const QSqlQuery& _query);
+
+    bool isOpen() const;
+    QSqlDatabase& database();
 
 private:
+    // Order matters: the connection name must outlive-initialize the database.
+    QString m_connectionName;
     std::unique_ptr<QSqlDatabase> m_sqlDataBase;
 
 public:

@@ -1,16 +1,20 @@
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.2
-import QtMultimedia 5.8
+import QtMultimedia
 import QtQuick.Controls.Material 2.2
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs
 import Qt.labs.settings 1.0
 import solid.broccoli 1.0
 import "."
 
 PageTheme {
-    width: parent.width
+    width: window.width
     property string pictureName
+
+    MediaDevices {
+        id: mediaDevices
+    }
 
     RoundButton {
         id: drawerOpen
@@ -35,11 +39,6 @@ PageTheme {
     }
 
     toolbarButtons:ColumnLayout{
-        //     width: 1280
-        //   height: 80
-        anchors.right: parent.right
-        width: parent.width /13
-        height: parent.height
         spacing: 3
 
         RoundButton {
@@ -62,7 +61,8 @@ PageTheme {
             //anchors.right: quit.left
             //rightPadding: 5
             onClicked: {
-                pageStack.push("qrc:/AlbumListPage.qml")
+                console.log("Navigation: opening AlbumListPage")
+                pageStack.replace("qrc:/AlbumListPage.qml", {}, StackView.Immediate)
             }
 
         }
@@ -103,7 +103,8 @@ PageTheme {
                 color: Style.roundButtonYellow
             }
             onClicked: {
-                pageStack.push("qrc:/CameraPage.qml")
+                console.log("Navigation: opening CameraPage")
+                pageStack.replace("qrc:/CameraPage.qml", {}, StackView.Immediate)
             }
         }
 
@@ -148,17 +149,11 @@ PageTheme {
                     width: drawerRect.width
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                    model: QtMultimedia.availableCameras
-                    textRole: "displayName"
+                    model: mediaDevices.videoInputs
+                    textRole: "description"
                     delegate: ItemDelegate
                     {
-                        text: modelData.displayName
-                    }
-                    onCurrentIndexChanged:
-                    {
-                        CameraPage.camera.stop()
-                        CameraPage.camera.deviceId = model[currentIndex].deviceId
-                        CameraPage.camera.start()
+                        text: modelData.description
                     }
 
                 }
@@ -171,7 +166,8 @@ PageTheme {
                     smooth: true
 
                     onClicked: {
-                        pageStack.push("qrc:/LoggerPage.qml")
+                        console.log("Navigation: opening LoggerPage")
+                        pageStack.replace("qrc:/LoggerPage.qml", {}, StackView.Immediate)
                         settingsDrawer.close()
                     }
                 }
