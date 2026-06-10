@@ -17,7 +17,7 @@ Today the application (built from `QML_ML_Camera/` with CMake, producing `QML_ML
 
 - [x] (2026-06-10) Milestone 1: Core architecture restructure — generated qmake files removed from git, `DatabaseManager` de-singletoned (public path constructor, `isOpen()`, `database()`, unique connection names, `defaultDatabasePath()`), `DatabaseManager&` injected into `AlbumModel`/`PictureModel`/`LoggerModel`, `StorageLocations` added to camera-core, `logger-core` takes an injected log directory, Movie* dead code moved to `QML_ML_Camera/attic/`. Verified: clean CMake build; app launched from `/tmp` creates DB/logs under `~/Library/Application Support/SolidBroccoli/SolidBroccoli/`.
 - [x] (2026-06-10) Milestone 2: Camera service and device/format setup UI — `CameraService` (app layer) owns `QMediaCaptureSession`/`QCamera`/`QImageCapture`/`QMediaRecorder`, exposes `availableCameras`/`currentCameraIndex`/`availableFormats`/`currentFormatIndex`/`active` and `attachVideoOutput`/`setActive`/`captureImage`; registered via `qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", ...)`. Hot-plug fallback on `QMediaDevices::videoInputsChanged`. `CameraPage.qml` rewritten as thin view (VideoOutput + settings `Drawer` with two ComboBoxes + capture error label + shutter flash); `CameraProcessor.*` deleted. Verified: build + smoke run; log shows camera enumeration and default device selection. Device-switch and format-switch interaction still to be exercised by a human with camera permission granted.
-- [ ] Milestone 3: Video recording.
+- [x] (2026-06-10) Milestone 3: Video recording — `CameraService` gained `startRecording()`/`stopRecording()` (MPEG4/H264 with `QMediaFormat::isSupported` fallback, output `SolidBroccoli_VID_<timestamp>.mp4` under `StorageLocations::recordingsDir()`), `recording` and `recordingDuration` ("mm:ss") properties, and a `recordingSaved(filePath, durationMs)` signal. New `Movie`/`MovieDAO`/`MovieModel` in camera-core (`movies` table: id, album_id, url, name, duration, created_at; `CREATE TABLE IF NOT EXISTS`); `main.cpp` connects `recordingSaved` → `MovieModel::addRecording` and registers `movieModel`. CameraPage got a pulsing record toggle + live duration; `MovieAlbumPage.qml` rewritten as a recordings list, `MoviePage.qml` rewritten as a Qt6 `MediaPlayer`+`AudioOutput` player with seek/volume/rename/delete; MainPage recordings button re-enabled. Verified: build clean, app starts, `movies` table created, qmllint shows only pre-existing style warnings. End-to-end record→playback needs an interactive session with camera permission.
 - [ ] Milestone 4: Image capture and saving pipeline.
 - [ ] Milestone 5: Frame-processor plugin system with grayscale proof plugin.
 - [ ] Milestone 6: Unit testing module wired into CTest.
@@ -43,6 +43,8 @@ Today the application (built from `QML_ML_Camera/` with CMake, producing `QML_ML
   Evidence: smoke-run log 2026-06-10 21:20: "Access to camera not granted" followed by "Camera selected: MacBook Pro Camera".
 - Observation (M1): Qt nests org name and app name, so the data root is `~/Library/Application Support/SolidBroccoli/SolidBroccoli/`. Harmless; left as-is.
   Evidence: smoke-run `find` output.
+- Observation (M3): The legacy movie QML pages were entirely dead — `MainPage`'s entry button was commented out, and the pages referenced context properties (`movieProcessor`, `movieAlbumModel`), an image provider (`image://movies`), icons (`add_movie.png`, `play_player.png`, …) and Qt 5 modules (`QtQuick.Extras 1.4`, `QtQuick.Controls.Styles 1.4`) that do not exist in this build, so `MoviePage.qml` could never have loaded. Rewrote rather than patched.
+  Evidence: pre-change `MoviePage.qml` imports and `MainPage.qml` lines 69–90 (commented button).
 
 ## Decision Log
 
@@ -73,6 +75,16 @@ Today the application (built from `QML_ML_Camera/` with CMake, producing `QML_ML
   Date/Author: 2026-06-10 / Claude
 - Decision: The `appPath` QML context property was replaced by a `logsPath` URL context property.
   Rationale: The only consumer was `LoggerPage.qml` computing `appPath + "/logs"` — path policy in QML violates the thin-view rule; C++ now hands QML the finished URL.
+  Date/Author: 2026-06-10 / Claude
+
+- Decision: Recordings are presented as one flat "Recordings" list (no movie albums yet); `movies.album_id` exists and is nullable so album grouping can be added without a migration. `MovieAlbumListPage.qml` moved to `attic/`.
+  Rationale: The movie-album UI was dead code with no working model behind it; a flat list achieves the milestone's observable outcome (recordings visible and playable) with the least new surface, and the schema keeps the album option open.
+  Date/Author: 2026-06-10 / Claude
+- Decision: MoviePage player controls use Unicode glyph buttons (▶ ⏸ ⏹ ⏪ ⏩) temporarily.
+  Rationale: The referenced player PNGs never existed in resources; Milestone 7 replaces all icons with SVGs anyway, so adding interim raster assets would be churn.
+  Date/Author: 2026-06-10 / Claude
+- Decision: `CameraService::applyCamera()` stops any active recording before switching devices, and `CameraPage` stops recording on page destruction.
+  Rationale: A `QMediaRecorder` cannot survive its source `QCamera` being destroyed; stopping produces a valid finished file instead of a corrupt one.
   Date/Author: 2026-06-10 / Claude
 
 ## Outcomes & Retrospective

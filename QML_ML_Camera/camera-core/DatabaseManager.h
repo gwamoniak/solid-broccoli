@@ -10,6 +10,7 @@
 #include "AlbumDAO.h"
 #include "PictureDAO.h"
 #include "LoggerDAO.h"
+#include "MovieDAO.h"
 
 class QSqlQuery;
 class QSqlDatabase;
@@ -42,6 +43,7 @@ public:
     const AlbumDAO m_albumDao;
     const PictureDAO m_pictureDao;
     const LoggerDAO m_loggerDao;
+    const MovieDAO m_movieDao;
 };
 
 #endif // DATABASEMANAGER_H

@@ -11,6 +11,12 @@ qt_add_library(camera-core SHARED
     LoggerDAO.h
     LoggerModel.cpp
     LoggerModel.h
+    Movie.cpp
+    Movie.h
+    MovieDAO.cpp
+    MovieDAO.h
+    MovieModel.cpp
+    MovieModel.h
     Picture.cpp
     Picture.h
     PictureDAO.cpp

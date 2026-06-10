@@ -19,6 +19,7 @@ PageTheme {
     }
 
     Component.onDestruction: {
+        CameraService.stopRecording()
         CameraService.setActive(false)
     }
 
@@ -67,6 +68,18 @@ PageTheme {
             }
 
             onOpacityChanged: if (opacity > 0.5) opacity = 0
+        }
+
+        Label {
+            id: durationLabel
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.margins: 8
+            color: Style.roundButtonRed
+            font.pointSize: 16
+            font.bold: true
+            text: "● " + CameraService.recordingDuration
+            visible: CameraService.recording
         }
 
         Label {
@@ -160,6 +173,36 @@ PageTheme {
 
             onClicked: {
                 CameraService.captureImage()
+            }
+        }
+
+        RoundButton {
+            id: recordButton
+            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+            Layout.preferredHeight: Style.roundButtonHeight
+            Layout.preferredWidth: Style.roundButtonWidth
+            icon.source: "qrc:/images/png/record.png"
+            icon.width: Style.roundButtonWidth - 15
+            icon.height: Style.roundButtonHeight - 15
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: CameraService.recording ? Style.roundButtonRed : Style.buttonBackground
+
+                SequentialAnimation on opacity {
+                    running: CameraService.recording
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 1.0; to: 0.4; duration: 600 }
+                    NumberAnimation { from: 0.4; to: 1.0; duration: 600 }
+                    onRunningChanged: if (!running) parent.opacity = 1.0
+                }
+            }
+
+            onClicked: {
+                if (CameraService.recording) {
+                    CameraService.stopRecording()
+                } else {
+                    CameraService.startRecording()
+                }
             }
         }
 

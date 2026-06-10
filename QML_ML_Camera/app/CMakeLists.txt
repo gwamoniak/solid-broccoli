@@ -16,7 +16,6 @@ qt_add_resources(QML_ML_Camera_App app_resources
         InputDialog.qml
         LoggerPage.qml
         MainPage.qml
-        MovieAlbumListPage.qml
         MovieAlbumPage.qml
         MoviePage.qml
         PageTheme.qml

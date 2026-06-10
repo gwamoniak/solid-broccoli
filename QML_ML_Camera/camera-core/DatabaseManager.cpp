@@ -37,7 +37,8 @@ DatabaseManager::DatabaseManager(const QString& _path) :
         QSqlDatabase::addDatabase("QSQLITE", m_connectionName))),
     m_albumDao(*m_sqlDataBase),
     m_pictureDao(*m_sqlDataBase),
-    m_loggerDao(*m_sqlDataBase)
+    m_loggerDao(*m_sqlDataBase),
+    m_movieDao(*m_sqlDataBase)
 {
     m_sqlDataBase->setDatabaseName(_path);
 
@@ -48,6 +49,7 @@ DatabaseManager::DatabaseManager(const QString& _path) :
     m_albumDao.init();
     m_pictureDao.init();
     m_loggerDao.init();
+    m_movieDao.init();
 }
 
 DatabaseManager::~DatabaseManager()

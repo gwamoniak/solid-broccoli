@@ -1,6 +1,8 @@
 #include "CameraService.h"
 
 #include <QDateTime>
+#include <QMediaFormat>
+#include <QUrl>
 #include <QVideoFrameFormat>
 
 #include "StorageLocations.h"
@@ -20,6 +22,29 @@ CameraService::CameraService(QObject* parent)
     connect(&m_imageCapture, &QImageCapture::errorOccurred,
             this, [this](int, QImageCapture::Error, const QString& message) {
         qWarning(logWarning()) << "Image capture error:" << message;
+        emit captureError(message);
+    });
+
+    connect(&m_recorder, &QMediaRecorder::recorderStateChanged,
+            this, [this](QMediaRecorder::RecorderState state) {
+        emit recordingChanged();
+        if (state == QMediaRecorder::StoppedState
+                && m_recorder.error() == QMediaRecorder::NoError
+                && m_lastRecordingDurationMs > 0) {
+            const QString filePath = m_recorder.actualLocation().toLocalFile();
+            qDebug(logInfo()) << "Recording saved:" << filePath
+                              << "duration(ms):" << m_lastRecordingDurationMs;
+            emit recordingSaved(filePath, m_lastRecordingDurationMs);
+        }
+    });
+    connect(&m_recorder, &QMediaRecorder::durationChanged,
+            this, [this](qint64 duration) {
+        m_lastRecordingDurationMs = duration;
+        emit recordingDurationChanged();
+    });
+    connect(&m_recorder, &QMediaRecorder::errorOccurred,
+            this, [this](QMediaRecorder::Error, const QString& message) {
+        qWarning(logWarning()) << "Recording error:" << message;
         emit captureError(message);
     });
 
@@ -110,6 +135,54 @@ void CameraService::captureImage()
     }
 }
 
+bool CameraService::isRecording() const
+{
+    return m_recorder.recorderState() == QMediaRecorder::RecordingState;
+}
+
+QString CameraService::recordingDuration() const
+{
+    const int totalSeconds = static_cast<int>(m_lastRecordingDurationMs / 1000);
+    return QStringLiteral("%1:%2")
+        .arg(totalSeconds / 60, 2, 10, QLatin1Char('0'))
+        .arg(totalSeconds % 60, 2, 10, QLatin1Char('0'));
+}
+
+void CameraService::startRecording()
+{
+    if (isRecording()) {
+        return;
+    }
+    if (!isActive()) {
+        const QString message = tr("Camera is not active, cannot record.");
+        qWarning(logWarning()) << message;
+        emit captureError(message);
+        return;
+    }
+
+    QMediaFormat format(QMediaFormat::MPEG4);
+    format.setVideoCodec(QMediaFormat::VideoCodec::H264);
+    if (!format.isSupported(QMediaFormat::Encode)) {
+        qWarning(logWarning()) << "MPEG4/H264 not supported, using platform default format.";
+        format = QMediaFormat();
+    }
+    m_recorder.setMediaFormat(format);
+
+    m_lastRecordingDurationMs = 0;
+    emit recordingDurationChanged();
+
+    m_recorder.setOutputLocation(QUrl::fromLocalFile(nextRecordingPath()));
+    m_recorder.record();
+    qDebug(logInfo()) << "Recording started:" << m_recorder.outputLocation().toLocalFile();
+}
+
+void CameraService::stopRecording()
+{
+    if (isRecording()) {
+        m_recorder.stop();
+    }
+}
+
 void CameraService::refreshDevices()
 {
     const QCameraDevice previousDevice =
@@ -148,6 +221,9 @@ void CameraService::refreshDevices()
 
 void CameraService::applyCamera(int index)
 {
+    // A recording cannot survive its source device being replaced.
+    stopRecording();
+
     // Preserve the running state across a device switch; the camera stays
     // off at construction until the camera page activates it.
     const bool wasActive = isActive();
@@ -191,4 +267,12 @@ QString CameraService::nextPicturePath() const
         QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
     return StorageLocations::picturesDir()
            + "/SolidBroccoli_PIC_" + timestamp + ".jpg";
+}
+
+QString CameraService::nextRecordingPath() const
+{
+    const QString timestamp =
+        QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+    return StorageLocations::recordingsDir()
+           + "/SolidBroccoli_VID_" + timestamp + ".mp4";
 }

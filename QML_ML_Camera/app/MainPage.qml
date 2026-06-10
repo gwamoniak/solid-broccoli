@@ -66,28 +66,25 @@ PageTheme {
             }
 
         }
-//        RoundButton {
-//            id:movieAlbumButton
-//            Layout.preferredHeight:  65
-//            Layout.preferredWidth:   65
-//            smooth: true
-//            antialiasing: true
-//            //text: qsTr("ALBUM")
-//            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
-//            background: Image {
-//                source: "qrc:/images/png/movie_gallery.png"
-//                width: 65
-//                height: 65
-//            }
-
-//            //font.pointSize: 18
-//            //anchors.right: quit.left
-//            //rightPadding: 5
-//            onClicked: {
-//                pageStack.push("qrc:/MovieAlbumListPage.qml")
-//            }
-//
-//        }
+        RoundButton {
+            id: movieAlbumButton
+            Layout.preferredHeight:  Style.roundButtonHeight
+            Layout.preferredWidth:   Style.roundButtonWidth
+            smooth: true
+            antialiasing: true
+            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
+            icon.source: "qrc:/images/png/forward_player.png"
+            icon.width: Style.roundButtonWidth
+            icon.height: Style.roundButtonHeight
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonGreen
+            }
+            onClicked: {
+                console.log("Navigation: opening MovieAlbumPage")
+                pageStack.replace("qrc:/MovieAlbumPage.qml", {}, StackView.Immediate)
+            }
+        }
         RoundButton {
             id: cameraPage
             Layout.preferredHeight:  Style.roundButtonHeight

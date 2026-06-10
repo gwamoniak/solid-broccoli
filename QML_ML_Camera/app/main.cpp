@@ -5,6 +5,7 @@
 
 #include "AlbumModel.h"
 #include "PictureModel.h"
+#include "MovieModel.h"
 #include "DatabaseManager.h"
 #include "StorageLocations.h"
 #include "logger.h"
@@ -35,7 +36,11 @@ int main(int argc, char *argv[])
     AlbumModel   albumModel(db);
     PictureModel pictureModel(db, albumModel);
     LoggerModel  loggerModel(db);
+    MovieModel   movieModel(db);
     CameraService cameraService;
+
+    QObject::connect(&cameraService, &CameraService::recordingSaved,
+                     &movieModel, &MovieModel::addRecording);
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
@@ -45,6 +50,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("albumModel",   &albumModel);
     context->setContextProperty("pictureModel", &pictureModel);
     context->setContextProperty("loggerModel",  &loggerModel);
+    context->setContextProperty("movieModel",   &movieModel);
     context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
 
