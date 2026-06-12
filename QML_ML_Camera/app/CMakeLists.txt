@@ -3,6 +3,12 @@ qt_add_executable(QML_ML_Camera_App
     main.cpp
     CameraService.cpp
     CameraService.h
+    CaptureCoordinator.cpp
+    CaptureCoordinator.h
+    FrameProcessingWorker.cpp
+    FrameProcessingWorker.h
+    PluginManager.cpp
+    PluginManager.h
     PictureProvider.cpp
     PictureProvider.h
 )
@@ -48,6 +54,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
 target_link_libraries(QML_ML_Camera_App
     PRIVATE
         Qt6::Core
+        Qt6::Gui
         Qt6::Qml
         Qt6::Quick
         Qt6::Sql
@@ -55,7 +62,12 @@ target_link_libraries(QML_ML_Camera_App
         Qt6::Multimedia
         camera-core
         logger-core
+        processor-api
 )
+
+# Build the proof plugin alongside the app so it lands in app/plugins/ and is
+# discovered at runtime, even though the app does not link it.
+add_dependencies(QML_ML_Camera_App grayscale-processor)
 
 target_compile_definitions(QML_ML_Camera_App
     PRIVATE APP_VERSION="${PROJECT_VERSION}"

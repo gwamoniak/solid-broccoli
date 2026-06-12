@@ -151,7 +151,65 @@ PageTheme {
                 }
             }
 
-            Item { Layout.fillHeight: true }
+            Label {
+                text: qsTr("Processors")
+                color: Style.text
+                font.pointSize: Style.fontSize
+            }
+
+            Label {
+                text: qsTr("Processors transform the live preview only; captured photos stay original.")
+                color: Style.text
+                font.pointSize: Style.fontSize - 4
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                opacity: 0.7
+            }
+
+            ListView {
+                id: processorList
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: pluginModel
+                spacing: 6
+
+                delegate: RowLayout {
+                    width: processorList.width
+                    spacing: 8
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Label {
+                            text: name
+                            color: Style.text
+                            font.pointSize: Style.fontSize
+                        }
+                        Label {
+                            text: description
+                            color: Style.text
+                            font.pointSize: Style.fontSize - 4
+                            opacity: 0.7
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+
+                    Switch {
+                        checked: model.enabled
+                        onToggled: pluginModel.setEnabled(index, checked)
+                    }
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    visible: processorList.count === 0
+                    text: qsTr("No processors installed")
+                    color: Style.text
+                    opacity: 0.6
+                }
+            }
         }
     }
 

@@ -1,72 +1,79 @@
 #include "PictureProvider.h"
 #include "PictureModel.h"
+#include "ThumbnailCache.h"
+
+#include <QImage>
+#include <QQuickImageResponse>
+#include <QQuickTextureFactory>
+#include <QRunnable>
 
 #include "logger.h"
 
-const QString PICTURE_SIZE_FULL = "full";
-const QString PICTURE_SIZE_THUMBNAIL = "thumbnail";
-const QSize PictureProvider::THUMBNAIL_SIZE = QSize(240,240);
-
-
-PictureProvider::PictureProvider(PictureModel *pictureModel):
-         QQuickImageProvider(QQuickImageProvider::Pixmap),
-         m_PictureModel(pictureModel),                                                             
-         m_PictureCache()
-{
-
+namespace {
+const QString PICTURE_SIZE_THUMBNAIL = QStringLiteral("thumbnail");
 }
 
+const QSize PictureProvider::THUMBNAIL_SIZE = QSize(240, 240);
 
-
-
-QPixmap PictureProvider::requestPixmap(const QString &id, QSize* /*_size*/, const QSize& /*requestSize*/)
+// One in-flight request. The heavy decode/scale happens in run() on the pool;
+// when finished it emits finished() and the engine pulls the image via
+// textureFactory(). The file path is resolved before construction (GUI thread)
+// so the worker never touches the model.
+class PictureResponse : public QQuickImageResponse, public QRunnable
 {
-    QStringList query = id.split('/');
-    if(!m_PictureModel || query.size() < 2)
+public:
+    PictureResponse(const QString& filePath, bool thumbnail)
+        : m_filePath(filePath), m_thumbnail(thumbnail)
     {
-        return QPixmap();
+        setAutoDelete(false);
     }
 
-    int row = query[0].toInt();
-    QString pictureSize = query[1];
-    QUrl fileUrl;
+    QQuickTextureFactory* textureFactory() const override
+    {
+        return QQuickTextureFactory::textureFactoryForImage(m_image);
+    }
 
-    if(m_PictureModel)
-        fileUrl = m_PictureModel->data(m_PictureModel->index(row,0),
-                                        PictureModel::DBRoles::UrlRole).toUrl();
+    void run() override
+    {
+        if (m_filePath.isEmpty()) {
+            emit finished();
+            return;
+        }
+        if (m_thumbnail) {
+            const QString thumbPath = ThumbnailCache::thumbnailFor(m_filePath);
+            m_image.load(thumbPath.isEmpty() ? m_filePath : thumbPath);
+        } else {
+            m_image.load(m_filePath);
+        }
+        emit finished();
+    }
 
+private:
+    QImage m_image;
+    QString m_filePath;
+    bool m_thumbnail;
+};
 
-    return *pictureFromCache(fileUrl.toLocalFile(), pictureSize);
-
+PictureProvider::PictureProvider(PictureModel* pictureModel)
+    : m_pictureModel(pictureModel)
+{
 }
 
-QPixmap *PictureProvider::pictureFromCache(const QString &filepath, const QString &pictureSize)
+QQuickImageResponse* PictureProvider::requestImageResponse(const QString& id,
+                                                           const QSize& /*requestSize*/)
 {
-    QString key = pictureSize + "-" + filepath;
+    const QStringList query = id.split('/');
+    QString filePath;
+    bool thumbnail = true;
 
-    QPixmap *cachePicture = nullptr;
-    if(!m_PictureCache.contains(key))
-    {
-        QPixmap originalPicture(filepath);
-
-        if (pictureSize == PICTURE_SIZE_THUMBNAIL)
-        {
-            cachePicture = new QPixmap(originalPicture.scaled(THUMBNAIL_SIZE,Qt::KeepAspectRatio,Qt::SmoothTransformation));
-        }
-        else if(pictureSize == PICTURE_SIZE_FULL)
-        {
-            cachePicture = new QPixmap(originalPicture);
-
-        }
-        m_PictureCache.insert(key, cachePicture);
-
-    }
-    else
-    {
-        cachePicture = m_PictureCache[key];
-
+    if (m_pictureModel && query.size() >= 2) {
+        const int row = query.at(0).toInt();
+        thumbnail = (query.at(1) == PICTURE_SIZE_THUMBNAIL);
+        filePath = m_pictureModel->data(m_pictureModel->index(row, 0),
+                                        PictureModel::DBRoles::FilePathRole).toString();
     }
 
-    return cachePicture;
-
+    auto* response = new PictureResponse(filePath, thumbnail);
+    m_pool.start(response);
+    return response;
 }

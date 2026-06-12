@@ -3,8 +3,10 @@
 #include <QDateTime>
 #include <QMediaFormat>
 #include <QUrl>
+#include <QVideoFrame>
 #include <QVideoFrameFormat>
 
+#include "FrameProcessingWorker.h"
 #include "StorageLocations.h"
 #include "logger.h"
 
@@ -13,6 +15,19 @@ CameraService::CameraService(QObject* parent)
 {
     m_captureSession.setImageCapture(&m_imageCapture);
     m_captureSession.setRecorder(&m_recorder);
+
+    // The worker lives on its own thread so per-frame processing never blocks
+    // the GUI. Frames go out via process() (queued) and come back via
+    // processed() (queued onto this object's thread).
+    m_worker = new FrameProcessingWorker();
+    m_worker->moveToThread(&m_workerThread);
+    connect(&m_workerThread, &QThread::finished, m_worker, &QObject::deleteLater);
+    connect(m_worker, &FrameProcessingWorker::processed,
+            this, &CameraService::onFrameProcessed);
+    m_workerThread.start();
+
+    connect(&m_processingSink, &QVideoSink::videoFrameChanged,
+            this, &CameraService::onFrameChanged);
 
     connect(&m_imageCapture, &QImageCapture::imageSaved,
             this, [this](int, const QString& fileName) {
@@ -52,6 +67,12 @@ CameraService::CameraService(QObject* parent)
             this, &CameraService::refreshDevices);
 
     refreshDevices();
+}
+
+CameraService::~CameraService()
+{
+    m_workerThread.quit();
+    m_workerThread.wait();
 }
 
 QStringList CameraService::availableCameras() const
@@ -113,7 +134,55 @@ bool CameraService::isActive() const
 
 void CameraService::attachVideoOutput(QObject* videoOutput)
 {
-    m_captureSession.setVideoOutput(videoOutput);
+    m_videoOutput = videoOutput;
+    m_outputSink = videoOutput
+        ? videoOutput->property("videoSink").value<QVideoSink*>()
+        : nullptr;
+    rebuildPipeline();
+}
+
+void CameraService::setProcessors(const QList<FrameProcessor*>& processors)
+{
+    m_worker->setProcessors(processors);
+    m_hasProcessors = !processors.isEmpty();
+    qDebug(logInfo()) << "CameraService: active processors:" << processors.size();
+    rebuildPipeline();
+}
+
+void CameraService::rebuildPipeline()
+{
+    if (m_hasProcessors && m_outputSink) {
+        // Tap the camera: render into our sink, forward processed frames.
+        m_captureSession.setVideoSink(&m_processingSink);
+    } else if (m_videoOutput) {
+        // Direct path: the session drives the QML video output itself.
+        m_captureSession.setVideoOutput(m_videoOutput);
+    }
+}
+
+void CameraService::onFrameChanged(const QVideoFrame& frame)
+{
+    if (!m_hasProcessors || !m_outputSink || !frame.isValid()) {
+        return;
+    }
+    // Process the latest frame only: if the worker is still busy, drop this one
+    // rather than queueing and falling behind. QVideoFrame is implicitly
+    // shared, so handing it across threads is cheap; the worker does the
+    // (potentially GPU-readback) toImage() conversion off the GUI thread.
+    bool expected = false;
+    if (!m_frameBusy.compare_exchange_strong(expected, true)) {
+        return;
+    }
+    QMetaObject::invokeMethod(m_worker, "process", Qt::QueuedConnection,
+                              Q_ARG(QVideoFrame, frame));
+}
+
+void CameraService::onFrameProcessed(const QImage& result)
+{
+    if (m_outputSink && !result.isNull()) {
+        m_outputSink->setVideoFrame(QVideoFrame(result));
+    }
+    m_frameBusy.store(false);
 }
 
 void CameraService::setActive(bool active)

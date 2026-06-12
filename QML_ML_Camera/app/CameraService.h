@@ -1,14 +1,23 @@
 #ifndef CAMERASERVICE_H
 #define CAMERASERVICE_H
 
+#include <atomic>
+
 #include <QObject>
+#include <QPointer>
 #include <QStringList>
+#include <QThread>
 #include <QCamera>
 #include <QCameraDevice>
 #include <QImageCapture>
 #include <QMediaCaptureSession>
 #include <QMediaDevices>
 #include <QMediaRecorder>
+#include <QVideoSink>
+
+class FrameProcessor;
+class FrameProcessingWorker;
+class QVideoFrame;
 
 // Single C++ owner of the capture pipeline. QML never constructs
 // camera objects: it binds to these properties, attaches its
@@ -26,6 +35,7 @@ class CameraService : public QObject
 
 public:
     explicit CameraService(QObject* parent = nullptr);
+    ~CameraService() override;
 
     QStringList availableCameras() const;
     int currentCameraIndex() const;
@@ -45,6 +55,13 @@ public:
     Q_INVOKABLE void startRecording();
     Q_INVOKABLE void stopRecording();
 
+public slots:
+    // Receives the ordered list of enabled processors from PluginManager and
+    // rebuilds the preview pipeline. With an empty list the camera writes
+    // straight to the QML video output (zero overhead); otherwise frames are
+    // tapped, processed on a worker thread, and forwarded to the output.
+    void setProcessors(const QList<FrameProcessor*>& processors);
+
 signals:
     void availableCamerasChanged();
     void currentCameraIndexChanged();
@@ -61,6 +78,9 @@ private:
     void refreshDevices();
     void applyCamera(int index);
     void refreshFormats();
+    void rebuildPipeline();
+    void onFrameChanged(const QVideoFrame& frame);
+    void onFrameProcessed(const QImage& result);
     QString nextPicturePath() const;
     QString nextRecordingPath() const;
 
@@ -75,6 +95,19 @@ private:
     QImageCapture m_imageCapture;
     QMediaRecorder m_recorder;
     qint64 m_lastRecordingDurationMs = 0;
+
+    // Frame-processor pipeline. When m_hasProcessors is true the session
+    // renders into m_processingSink (a tap), frames are handed to the worker
+    // thread, and processed images are pushed to m_outputSink (the QML
+    // VideoOutput's sink). When false, the session renders to m_videoOutput
+    // directly and the tap is idle.
+    QVideoSink m_processingSink;
+    QPointer<QObject> m_videoOutput;
+    QPointer<QVideoSink> m_outputSink;
+    QThread m_workerThread;
+    FrameProcessingWorker* m_worker = nullptr;
+    bool m_hasProcessors = false;
+    std::atomic<bool> m_frameBusy{false};
 };
 
 #endif // CAMERASERVICE_H

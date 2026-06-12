@@ -25,12 +25,15 @@ qt_add_library(camera-core SHARED
     PictureModel.h
     StorageLocations.cpp
     StorageLocations.h
+    ThumbnailCache.cpp
+    ThumbnailCache.h
     camera-core_global.h
 )
 
 target_link_libraries(camera-core
     PUBLIC
         Qt6::Core
+        Qt6::Gui
         Qt6::Sql
         logger-core
 )

@@ -12,6 +12,8 @@
 #include "LoggerModel.h"
 #include "PictureProvider.h"
 #include "CameraService.h"
+#include "CaptureCoordinator.h"
+#include "PluginManager.h"
 
 
 int main(int argc, char *argv[])
@@ -37,10 +39,25 @@ int main(int argc, char *argv[])
     PictureModel pictureModel(db, albumModel);
     LoggerModel  loggerModel(db);
     MovieModel   movieModel(db);
+
+    // The plugin manager must outlive CameraService: the service's worker
+    // thread runs processor code that lives in the loaded plugin libraries,
+    // and the manager unloads those libraries in its destructor.
+    PluginManager pluginManager;
     CameraService cameraService;
 
     QObject::connect(&cameraService, &CameraService::recordingSaved,
                      &movieModel, &MovieModel::addRecording);
+
+    // Captured stills are registered into the current album as they are saved.
+    CaptureCoordinator captureCoordinator(cameraService, pictureModel);
+
+    // Discover frame-processor plugins and keep the camera pipeline's active
+    // processor list in sync with the user's enable/disable choices.
+    pluginManager.loadPlugins();
+    QObject::connect(&pluginManager, &PluginManager::enabledProcessorsChanged,
+                     &cameraService, &CameraService::setProcessors);
+    cameraService.setProcessors(pluginManager.enabledProcessors());
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
@@ -51,6 +68,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("pictureModel", &pictureModel);
     context->setContextProperty("loggerModel",  &loggerModel);
     context->setContextProperty("movieModel",   &movieModel);
+    context->setContextProperty("pluginModel",  &pluginManager);
     context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
 
