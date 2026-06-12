@@ -27,7 +27,9 @@ public:
 
     // Scans <application dir>/plugins and the app-data plugins folder. Safe to
     // call once at startup; broken or non-conforming libraries are skipped.
-    void loadPlugins();
+    // extraDirs are scanned in addition to the standard locations; tests use it
+    // to point at the build-tree plugin output without installing anything.
+    void loadPlugins(const QStringList& extraDirs = QStringList());
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role) const override;

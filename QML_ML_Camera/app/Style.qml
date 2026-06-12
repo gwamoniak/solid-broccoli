@@ -14,6 +14,14 @@ QtObject {
 
     property color itemHighlight:     "#3daee9"
 
+    // Icon tint colors. SVG glyphs are monochrome and recolored at runtime via
+    // a control's icon.color, so one source serves every theme.
+    property color iconColor:   "#fffafa"
+    property color dangerColor: "#ffe2e2"
+
+    // Default glyph size inside a round button (leaves padding inside the disc).
+    property int iconSize: 34
+
     property string fontName : "sans-serif";
 
     //property var specialPaths : [{ "label" : qsTr ("Root"), "uri" : "file:///" }];

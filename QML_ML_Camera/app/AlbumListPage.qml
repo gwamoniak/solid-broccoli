@@ -14,9 +14,10 @@ PageTheme {
         Layout.preferredWidth:   Style.roundButtonWidth
         //antialiasing: true
         Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        icon.source:"qrc:/images/png/add_album_gallery.png"
-        icon.width :Style.roundButtonWidth -10
-        icon.height:Style.roundButtonHeight -10
+        icon.source:"qrc:/images/svg/add-album.svg"
+        icon.color: Style.iconColor
+        icon.width : Style.iconSize
+        icon.height: Style.iconSize
         background: Rectangle {
             radius: Style.roundButtonRadius
             color: Style.roundButtonGreen

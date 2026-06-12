@@ -26,7 +26,7 @@ PluginManager::~PluginManager()
     }
 }
 
-void PluginManager::loadPlugins()
+void PluginManager::loadPlugins(const QStringList& extraDirs)
 {
     // Candidate plugin directories, in priority order. On a plain layout the
     // plugins sit next to the executable; inside a macOS .app bundle the
@@ -39,6 +39,9 @@ void PluginManager::loadPlugins()
     dirs << QDir::cleanPath(appDir + "/../PlugIns");
     dirs << QDir::cleanPath(appDir + "/../../../plugins");
     dirs << QDir::cleanPath(StorageLocations::root() + "/plugins");
+    for (const QString& extra : extraDirs) {
+        dirs << QDir::cleanPath(extra);
+    }
 
     QStringList scanned;
     for (const QString& dirPath : dirs) {

@@ -221,9 +221,10 @@ PageTheme {
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
             Layout.preferredHeight: Style.roundButtonHeight
             Layout.preferredWidth: Style.roundButtonWidth
-            icon.source: "qrc:/images/png/save_photo.png"
-            icon.width: Style.roundButtonWidth - 15
-            icon.height: Style.roundButtonHeight - 15
+            icon.source: "qrc:/images/svg/save.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonGreen
@@ -239,9 +240,10 @@ PageTheme {
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
             Layout.preferredHeight: Style.roundButtonHeight
             Layout.preferredWidth: Style.roundButtonWidth
-            icon.source: "qrc:/images/png/record.png"
-            icon.width: Style.roundButtonWidth - 15
-            icon.height: Style.roundButtonHeight - 15
+            icon.source: "qrc:/images/svg/record.svg"
+            icon.color: CameraService.recording ? Style.iconColor : Style.dangerColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: CameraService.recording ? Style.roundButtonRed : Style.buttonBackground
@@ -269,9 +271,10 @@ PageTheme {
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
             Layout.preferredHeight: Style.roundButtonHeight
             Layout.preferredWidth: Style.roundButtonWidth
-            icon.source: "qrc:/images/png/cogwheel.png"
-            icon.width: Style.roundButtonWidth - 15
-            icon.height: Style.roundButtonHeight - 15
+            icon.source: "qrc:/images/svg/settings.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.buttonBackground

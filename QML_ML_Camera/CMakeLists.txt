@@ -10,8 +10,16 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql Svg Multimedia)
 
 qt_standard_project_setup()
 
+# include(CTest) defines BUILD_TESTING (default ON) and calls enable_testing(),
+# so `ctest` in the build dir runs the suite under tests/.
+include(CTest)
+
 add_subdirectory(logger-core)
 add_subdirectory(processor-api)
 add_subdirectory(camera-core)
 add_subdirectory(plugins/grayscale)
 add_subdirectory(app)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

@@ -31,24 +31,20 @@ qt_add_resources(QML_ML_Camera_App app_resources
         ToolBarTheme.qml
         main.qml
         qmldir
-        images/png/add_album_gallery.png
-        images/png/add_photo.png
-        images/png/album_gallery.png
-        images/png/back.png
-        images/png/camera.png
-        images/png/cogwheel.png
-        images/png/delete_album_gallery.png
-        images/png/delete_photo.png
-        images/png/forward_player.png
-        images/png/help.png
-        images/png/home_button.png
-        images/png/open_log.png
-        images/png/photo.png
-        images/png/quit.png
-        images/png/record.png
-        images/png/rename_album_gallery.png
-        images/png/rename_photo.png
-        images/png/save_photo.png
+        images/svg/add-album.svg
+        images/svg/add-photo.svg
+        images/svg/back.svg
+        images/svg/camera.svg
+        images/svg/delete.svg
+        images/svg/gallery.svg
+        images/svg/home.svg
+        images/svg/log.svg
+        images/svg/movie.svg
+        images/svg/quit.svg
+        images/svg/record.svg
+        images/svg/rename.svg
+        images/svg/save.svg
+        images/svg/settings.svg
 )
 
 target_link_libraries(QML_ML_Camera_App

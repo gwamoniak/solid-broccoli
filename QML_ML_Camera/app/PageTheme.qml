@@ -42,9 +42,10 @@ Page {
                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
                 Layout.preferredHeight: Style.roundButtonHeight
                 Layout.preferredWidth: Style.roundButtonWidth
-                icon.source: "qrc:/images/png/back.png"
-                icon.width: Style.roundButtonWidth - 12
-                icon.height: Style.roundButtonHeight - 12
+                icon.source: "qrc:/images/svg/back.svg"
+                icon.color: Style.iconColor
+                icon.width: Style.iconSize
+                icon.height: Style.iconSize
                 background: Rectangle {
                     radius: Style.roundButtonRadius
                     color: Style.buttonBackground
@@ -79,9 +80,10 @@ Page {
             width: Style.roundButtonWidth
             height: Style.roundButtonHeight
             anchors.centerIn: parent
-            icon.source: "qrc:/images/png/home_button.png"
-            icon.width: Style.roundButtonWidth - 12
-            icon.height: Style.roundButtonHeight - 12
+            icon.source: "qrc:/images/svg/home.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonHome

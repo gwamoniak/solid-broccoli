@@ -22,9 +22,10 @@ PageTheme {
             Layout.preferredHeight: Style.roundButtonHeight
             Layout.preferredWidth: Style.roundButtonWidth
             antialiasing: true
-            icon.source: "qrc:/images/png/open_log.png"
-            icon.width: Style.roundButtonWidth - 12
-            icon.height: Style.roundButtonHeight - 12
+            icon.source: "qrc:/images/svg/log.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonGreen

@@ -19,9 +19,10 @@ PageTheme {
             Layout.preferredHeight:  Style.roundButtonHeight
             Layout.preferredWidth:   Style.roundButtonWidth
             antialiasing: true
-            icon.source:"qrc:/images/png/rename_photo.png"
-            icon.width :Style.roundButtonWidth -20
-            icon.height:Style.roundButtonHeight
+            icon.source:"qrc:/images/svg/rename.svg"
+            icon.color: Style.iconColor
+            icon.width : Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonYellow
@@ -36,9 +37,10 @@ PageTheme {
             Layout.preferredHeight:  Style.roundButtonHeight
             Layout.preferredWidth:   Style.roundButtonWidth
             antialiasing: true
-            icon.source:"qrc:/images/png/delete_photo.png"
-            icon.width :Style.roundButtonWidth
-            icon.height:Style.roundButtonHeight
+            icon.source:"qrc:/images/svg/delete.svg"
+            icon.color: Style.dangerColor
+            icon.width : Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonRed

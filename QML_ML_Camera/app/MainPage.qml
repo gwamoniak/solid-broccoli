@@ -23,9 +23,10 @@ PageTheme {
         //text: qsTr("::")
         //font.pointSize: 18
         Layout.alignment: Qt.AlignRight| Qt.AlignTop
-        icon.source:"qrc:/images/png/cogwheel.png"
-        icon.width :Style.roundButtonWidth
-        icon.height:Style.roundButtonHeight
+        icon.source:"qrc:/images/svg/settings.svg"
+        icon.color: Style.iconColor
+        icon.width : Style.iconSize
+        icon.height: Style.iconSize
         background: Rectangle {
             radius: Style.roundButtonRadius
             color: Style.buttonBackground
@@ -49,9 +50,10 @@ PageTheme {
             antialiasing: true
             //text: qsTr("ALBUM")
             Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
-            icon.source: "qrc:/images/png/album_gallery.png"
-            icon.width :Style.roundButtonWidth
-            icon.height:Style.roundButtonHeight
+            icon.source: "qrc:/images/svg/gallery.svg"
+            icon.color: Style.iconColor
+            icon.width : Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonGreen
@@ -73,9 +75,10 @@ PageTheme {
             smooth: true
             antialiasing: true
             Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
-            icon.source: "qrc:/images/png/forward_player.png"
-            icon.width: Style.roundButtonWidth
-            icon.height: Style.roundButtonHeight
+            icon.source: "qrc:/images/svg/movie.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonGreen
@@ -92,9 +95,10 @@ PageTheme {
             smooth: true
 
             Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
-            icon.source: "qrc:/images/png/camera.png"
-            icon.width :Style.roundButtonWidth
-            icon.height:Style.roundButtonHeight
+            icon.source: "qrc:/images/svg/camera.svg"
+            icon.color: Style.iconColor
+            icon.width : Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonYellow
@@ -112,9 +116,10 @@ PageTheme {
             smooth: true
             //text: qsTr("-Quit-")
             Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
-            icon.source: "qrc:/images/png/quit.png"
-            icon.width :Style.roundButtonWidth
-            icon.height:Style.roundButtonHeight
+            icon.source: "qrc:/images/svg/quit.svg"
+            icon.color: Style.iconColor
+            icon.width : Style.iconSize
+            icon.height: Style.iconSize
             background: Rectangle {
                 radius: Style.roundButtonRadius
                 color: Style.roundButtonRed
