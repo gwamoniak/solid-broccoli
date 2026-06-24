@@ -33,7 +33,8 @@ PageTheme {
         }
 
         function onImageSaved(filePath) {
-            flashOverlay.opacity = 0.8
+            if (AppSettings.shutterFlash)
+                flashOverlay.opacity = 0.8
         }
     }
 
@@ -55,6 +56,13 @@ PageTheme {
             anchors.fill: parent
             fillMode: VideoOutput.PreserveAspectFit
             autoOrientation: true
+
+            // Mirror only the on-screen preview (a horizontal flip); captured
+            // stills come from the camera stream and stay un-mirrored.
+            transform: Scale {
+                origin.x: videoOutput.width / 2
+                xScale: AppSettings.mirrorPreview ? -1 : 1
+            }
         }
 
         Rectangle {

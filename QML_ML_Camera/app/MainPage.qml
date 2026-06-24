@@ -32,11 +32,8 @@ PageTheme {
             color: Style.buttonBackground
         }
 
-        onClicked: {
-            settingsDrawer.open()
-            if(settingsDrawer.opened)
-                settingsDrawer.close()
-        }
+        onClicked: settingsDrawer.opened ? settingsDrawer.close()
+                                         : settingsDrawer.open()
     }
 
     toolbarButtons:ColumnLayout{
@@ -135,63 +132,98 @@ PageTheme {
         id: settingsDrawer
         y: header.height
         height: window.height - header.height
-        width: 0.27* window.width
-        Rectangle {
-            id: drawerRect
+        width: Math.max(320, 0.32 * window.width)
+
+        background: Rectangle {
+            color: Style.pageBackground
+        }
+
+        ColumnLayout {
             anchors.fill: parent
-            color: Style.toolBackground
+            anchors.margins: 20
+            spacing: 16
 
-            Column{
-                id: settingButtons
-                spacing: 1
-                //height:0.15 *window.width
-                ComboBox
-                {
-                    id: cameraCombo
-                    width: drawerRect.width
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                    model: mediaDevices.videoInputs
-                    textRole: "description"
-                    delegate: ItemDelegate
-                    {
-                        text: modelData.description
-                    }
-
-                }
-                Button {
-                    id: loggerButton
-                    width: drawerRect.width
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                    text: qsTr("Logger")
-                    smooth: true
-
-                    onClicked: {
-                        console.log("Navigation: opening LoggerPage")
-                        pageStack.replace("qrc:/LoggerPage.qml", {}, StackView.Immediate)
-                        settingsDrawer.close()
-                    }
-                }
-
+            Label {
+                text: qsTr("Settings")
+                color: Style.text
+                font.family: Style.fontName
+                font.pointSize: 22
+                font.bold: true
+                Layout.bottomMargin: 4
             }
-            ListView {
-                id: listView
-                width: settingsDrawer.width
-                height: settingsDrawer.height - settingButtons.height
-                anchors.top: settingButtons.bottom
-                model:2
 
-                delegate: SettingSwitcher{
+            Label {
+                text: qsTr("CAMERA")
+                color: Style.text
+                opacity: 0.6
+                font.family: Style.fontName
+                font.pointSize: Style.fontSize - 4
+                font.bold: true
+            }
 
-                    text: qsTr("Title of Setting %1").arg(index + 1)
-                    font.bold: true
-                    font.pointSize: 10
+            ComboBox {
+                id: cameraCombo
+                Layout.fillWidth: true
+                model: mediaDevices.videoInputs
+                textRole: "description"
+            }
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                height: 1
+                color: Qt.rgba(1, 1, 1, 0.12)
+            }
+
+            Label {
+                text: qsTr("GENERAL")
+                color: Style.text
+                opacity: 0.6
+                font.family: Style.fontName
+                font.pointSize: Style.fontSize - 4
+                font.bold: true
+            }
+
+            SettingSwitcher {
+                Layout.fillWidth: true
+                text: qsTr("Shutter flash")
+                value: AppSettings.shutterFlash
+                onToggled: AppSettings.shutterFlash = checkedState
+            }
+
+            SettingSwitcher {
+                Layout.fillWidth: true
+                text: qsTr("Mirror preview")
+                value: AppSettings.mirrorPreview
+                onToggled: AppSettings.mirrorPreview = checkedState
+            }
+
+            Item { Layout.fillHeight: true }
+
+            Button {
+                id: loggerButton
+                Layout.fillWidth: true
+                Layout.preferredHeight: 48
+                text: qsTr("Open Logger")
+                font.family: Style.fontName
+                font.pointSize: Style.fontSize
+                icon.source: "qrc:/images/svg/log.svg"
+                icon.color: Style.iconColor
+                icon.width: Style.fontSize + 4
+                icon.height: Style.fontSize + 4
+                palette.buttonText: Style.iconColor
+
+                background: Rectangle {
+                    radius: 10
+                    color: loggerButton.down ? Qt.darker(Style.buttonBackground, 1.2)
+                                             : Style.buttonBackground
                 }
 
-                ScrollIndicator.vertical: ScrollIndicator { }
-
+                onClicked: {
+                    console.log("Navigation: opening LoggerPage")
+                    pageStack.replace("qrc:/LoggerPage.qml", {}, StackView.Immediate)
+                    settingsDrawer.close()
+                }
             }
         }
 

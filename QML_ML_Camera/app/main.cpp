@@ -14,6 +14,7 @@
 #include "CameraService.h"
 #include "CaptureCoordinator.h"
 #include "PluginManager.h"
+#include "AppSettings.h"
 
 
 int main(int argc, char *argv[])
@@ -61,6 +62,9 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
+
+    AppSettings appSettings;
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
 
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
     context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());

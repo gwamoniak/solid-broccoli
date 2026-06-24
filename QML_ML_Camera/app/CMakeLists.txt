@@ -1,6 +1,8 @@
 qt_add_executable(QML_ML_Camera_App
     MACOSX_BUNDLE
     main.cpp
+    AppSettings.cpp
+    AppSettings.h
     CameraService.cpp
     CameraService.h
     CaptureCoordinator.cpp
