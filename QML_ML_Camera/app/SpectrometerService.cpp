@@ -46,10 +46,112 @@ void SpectrometerService::setCurrentDeviceIndex(int index)
         disconnectDevice();
 
     m_currentDeviceIndex = index;
+    // Dark/reference belong to the instrument they were captured on.
+    resetCalibration();
     qDebug(logInfo()) << "SpectrometerService: device selected:"
                       << currentDevice()->name();
     emit currentDeviceIndexChanged();
     emit connectedChanged();
+}
+
+void SpectrometerService::resetCalibration()
+{
+    m_dark = Spectrum();
+    m_reference = Spectrum();
+    m_pending = PendingCapture::None;
+    if (m_mode != 0) {
+        m_mode = 0;
+        emit modeChanged();
+    }
+    if (m_hold) {
+        m_hold = false;
+        emit holdChanged();
+    }
+    emit calibrationChanged();
+}
+
+void SpectrometerService::setMode(int mode)
+{
+    mode = std::clamp(mode, 0, 2);
+    if (mode == m_mode)
+        return;
+    if (mode != 0 && (!hasDark() || !hasReference())) {
+        emit errorOccurred(tr("Capture Dark and Ref before switching modes."));
+        return;
+    }
+    m_mode = mode;
+    qDebug(logInfo()) << "SpectrometerService: display mode" << mode;
+    rebuildDisplay();
+    emit modeChanged();
+    emit spectrumUpdated();
+}
+
+void SpectrometerService::setHold(bool hold)
+{
+    if (hold == m_hold)
+        return;
+    if (hold)
+        m_held = m_display;
+    m_hold = hold;
+    qDebug(logInfo()) << "SpectrometerService: hold" << hold;
+    emit holdChanged();
+    emit spectrumUpdated();
+}
+
+void SpectrometerService::captureDark()
+{
+    if (!m_acquiring) {
+        emit errorOccurred(tr("Start acquisition before capturing Dark."));
+        return;
+    }
+    // The simulator can physically "block the light path"; a real probe
+    // relies on the operator having done so, and we snapshot immediately.
+    if (auto* sim = qobject_cast<SimulatedSpectrometer*>(currentDevice())) {
+        sim->setLampEnabled(false);
+        m_pending = PendingCapture::Dark;
+        qDebug(logInfo()) << "SpectrometerService: dark capture pending (lamp off).";
+        return;
+    }
+    m_dark = m_liveSpectrum;
+    m_dark.kind = Spectrum::Kind::Dark;
+    qDebug(logInfo()) << "SpectrometerService: dark captured.";
+    emit calibrationChanged();
+}
+
+void SpectrometerService::captureReference()
+{
+    if (!m_acquiring) {
+        emit errorOccurred(tr("Start acquisition before capturing Ref."));
+        return;
+    }
+    // A simulated absorbance scene can swap in the blank (concentration 0)
+    // for one frame; emission scenes and hardware snapshot the live frame.
+    if (auto* sim = qobject_cast<SimulatedSpectrometer*>(currentDevice());
+        sim && sim->scene().absorberPeakA > 0.0) {
+        m_restoreConcentration = sim->scene().concentration;
+        sim->setSceneConcentration(0.0);
+        m_pending = PendingCapture::Reference;
+        qDebug(logInfo()) << "SpectrometerService: reference capture pending (blank in).";
+        return;
+    }
+    m_reference = m_liveSpectrum;
+    m_reference.kind = Spectrum::Kind::Reference;
+    qDebug(logInfo()) << "SpectrometerService: reference captured.";
+    emit calibrationChanged();
+}
+
+void SpectrometerService::rebuildDisplay()
+{
+    if (m_mode == 0 || !m_liveSpectrum.isValid()
+        || m_dark.counts.size() != m_liveSpectrum.counts.size()
+        || m_reference.counts.size() != m_liveSpectrum.counts.size()) {
+        m_display = m_liveSpectrum;
+        return;
+    }
+    m_display = m_liveSpectrum;
+    m_display.counts = (m_mode == 1)
+        ? SpectroAnalysis::transmittance(m_liveSpectrum, m_dark, m_reference)
+        : SpectroAnalysis::absorbance(m_liveSpectrum, m_dark, m_reference);
 }
 
 void SpectrometerService::setIntegrationTimeMs(int ms)
@@ -196,6 +298,34 @@ void SpectrometerService::onSpectrum(SensorDevice* device, const Spectrum& spect
         QMutexLocker locker(&m_spectrumMutex);
         m_liveSpectrum = spectrum;
     }
+
+    // Resolve a pending simulated dark/reference capture with this frame,
+    // then restore the scene.
+    if (m_pending != PendingCapture::None) {
+        auto* sim = qobject_cast<SimulatedSpectrometer*>(device);
+        if (m_pending == PendingCapture::Dark) {
+            m_dark = spectrum;
+            m_dark.kind = Spectrum::Kind::Dark;
+            if (sim)
+                sim->setLampEnabled(true);
+            qDebug(logInfo()) << "SpectrometerService: dark captured.";
+        } else {
+            m_reference = spectrum;
+            m_reference.kind = Spectrum::Kind::Reference;
+            if (sim)
+                sim->setSceneConcentration(m_restoreConcentration);
+            qDebug(logInfo()) << "SpectrometerService: reference captured.";
+        }
+        m_pending = PendingCapture::None;
+        emit calibrationChanged();
+    }
+
+    rebuildDisplay();
+
+    // Hold freezes the display and the readouts without stopping the
+    // stream (the mutex snapshot above keeps feeding the video overlay).
+    if (m_hold)
+        return;
 
     if (!m_frameClock.isValid()) {
         m_frameClock.start();

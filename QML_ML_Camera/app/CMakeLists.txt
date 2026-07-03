@@ -15,6 +15,8 @@ qt_add_executable(QML_ML_Camera_App
     PictureProvider.h
     SpectrometerService.cpp
     SpectrometerService.h
+    SpectrumView.cpp
+    SpectrumView.h
 )
 
 qt_add_resources(QML_ML_Camera_App app_resources
@@ -24,6 +26,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
         AlbumPage.qml
         CameraPage.qml
         InputDialog.qml
+        LivePage.qml
         LoggerPage.qml
         MainPage.qml
         MovieAlbumPage.qml
@@ -31,6 +34,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
         NavPage.qml
         PageTheme.qml
         PicturePage.qml
+        SessionsPage.qml
         SettingsPage.qml
         SettingSwitcher.qml
         Style.qml
@@ -51,7 +55,9 @@ qt_add_resources(QML_ML_Camera_App app_resources
         images/svg/record.svg
         images/svg/rename.svg
         images/svg/save.svg
+        images/svg/sessions.svg
         images/svg/settings.svg
+        images/svg/spectrum.svg
 )
 
 target_link_libraries(QML_ML_Camera_App
@@ -60,6 +66,7 @@ target_link_libraries(QML_ML_Camera_App
         Qt6::Gui
         Qt6::Qml
         Qt6::Quick
+        Qt6::QuickControls2
         Qt6::Sql
         Qt6::Svg
         Qt6::Multimedia

@@ -15,7 +15,7 @@ ApplicationWindow {
     readonly property alias pageStack: photosStack
     function goHome() {
         tabBar.currentIndex = 0
-        photosStack.pop(null)
+        liveStack.pop(null)
     }
 
     StackLayout {
@@ -27,16 +27,24 @@ ApplicationWindow {
         currentIndex: tabBar.currentIndex
 
         StackView {
+            id: liveStack
+            initialItem: LivePage { owningStack: liveStack }
+        }
+        StackView {
+            id: sessionsStack
+            initialItem: SessionsPage { owningStack: sessionsStack }
+        }
+        StackView {
+            id: cameraStack
+            initialItem: CameraPage { owningStack: cameraStack }
+        }
+        StackView {
             id: photosStack
             initialItem: AlbumListPage { owningStack: photosStack }
         }
         StackView {
             id: videosStack
             initialItem: MovieAlbumPage { owningStack: videosStack }
-        }
-        StackView {
-            id: cameraStack
-            initialItem: CameraPage { owningStack: cameraStack }
         }
         StackView {
             id: settingsStack
@@ -67,15 +75,17 @@ ApplicationWindow {
 
             Repeater {
                 model: [
+                    { icon: "qrc:/images/svg/spectrum.svg",  label: qsTr("Live") },
+                    { icon: "qrc:/images/svg/sessions.svg",  label: qsTr("Sessions") },
+                    { icon: "qrc:/images/svg/camera.svg",    label: qsTr("Camera") },
                     { icon: "qrc:/images/svg/gallery.svg",   label: qsTr("Photos") },
                     { icon: "qrc:/images/svg/movie.svg",     label: qsTr("Videos") },
-                    { icon: "qrc:/images/svg/camera.svg",    label: qsTr("Camera") },
                     { icon: "qrc:/images/svg/settings.svg",  label: qsTr("Settings") }
                 ]
 
                 TabButton {
                     id: tabButton
-                    width: tabBarContainer.width / 4
+                    width: tabBarContainer.width / 6
                     height: tabBarContainer.height - Theme.hairline
                     background: null
                     icon.source: modelData.icon

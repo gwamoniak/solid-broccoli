@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQuickStyle>
 #include <QUrl>
 
 #include "AlbumModel.h"
@@ -13,6 +14,7 @@
 #include "PictureProvider.h"
 #include "CameraService.h"
 #include "SpectrometerService.h"
+#include "SpectrumView.h"
 #include "CaptureCoordinator.h"
 #include "PluginManager.h"
 #include "AppSettings.h"
@@ -23,6 +25,11 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QCoreApplication::setOrganizationName("SolidBroccoli");
     QCoreApplication::setApplicationName("SolidBroccoli");
+
+    // The UI is fully custom-themed from Theme.qml tokens; the native macOS
+    // style ignores contentItem/background customization, so pin the Basic
+    // style on every platform.
+    QQuickStyle::setStyle(QStringLiteral("Basic"));
 
     Logger log;
     if (log.InitLogger(StorageLocations::logsDir()))
@@ -70,6 +77,7 @@ int main(int argc, char *argv[])
     SpectrometerService spectrometerService;
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
                                  &spectrometerService);
+    qmlRegisterType<SpectrumView>("solid.broccoli", 1, 0, "SpectrumView");
 
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
     context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());
