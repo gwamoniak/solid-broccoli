@@ -19,6 +19,12 @@ endfunction()
 
 add_camera_test(tst_storagelocations tst_storagelocations.cpp)
 add_camera_test(tst_databasemanager tst_databasemanager.cpp)
+
+# spectro-core tests: pure analysis math and the transport+codec device wiring.
+add_camera_test(tst_spectroanalysis tst_spectroanalysis.cpp)
+target_link_libraries(tst_spectroanalysis PRIVATE spectro-core)
+add_camera_test(tst_codecdevice tst_codecdevice.cpp)
+target_link_libraries(tst_codecdevice PRIVATE spectro-core)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 
