@@ -26,10 +26,13 @@ qt_add_resources(QML_ML_Camera_App app_resources
         MainPage.qml
         MovieAlbumPage.qml
         MoviePage.qml
+        NavPage.qml
         PageTheme.qml
         PicturePage.qml
+        SettingsPage.qml
         SettingSwitcher.qml
         Style.qml
+        Theme.qml
         ToolBarTheme.qml
         main.qml
         qmldir

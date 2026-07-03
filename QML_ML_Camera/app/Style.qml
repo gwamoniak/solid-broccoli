@@ -1,39 +1,31 @@
 pragma Singleton
 import QtQuick 2.0
 
+// Back-compatibility shim: existing pages reference Style.xxx; these now
+// delegate to Theme tokens so the look updates from one place. New code
+// should reference Theme directly. This file can be deleted once every
+// consumer is migrated.
 QtObject {
-    property color text: "#fffafa" //"#3daee9"
-    property color pictureText: "#1e90ff"
+    property color text:             Theme.label
+    property color pictureText:      Theme.accent
+    property color windowBackground: Theme.groupedBackground
+    property color toolBackground:   Theme.surface
+    property color pageBackground:   Theme.groupedBackground
+    property color buttonBackground: Theme.accent
+    property color itemHighlight:    Theme.accent
+    property color iconColor:        Theme.label
+    property color dangerColor:      Theme.destructive
 
-    property color windowBackground:  "#bd93f9"
-    property color toolBackground:    "#C0BC87"
-    property color pageBackground:    "#6272a4" //"#fcfcfc"
-    property color buttonBackground:  "#1e90ff" //#50fa7b
+    property int iconSize: 24
+    property string fontName: Theme.fontName
+    property int fontSize: Theme.subhead
 
-
-
-    property color itemHighlight:     "#3daee9"
-
-    // Icon tint colors. SVG glyphs are monochrome and recolored at runtime via
-    // a control's icon.color, so one source serves every theme.
-    property color iconColor:   "#fffafa"
-    property color dangerColor: "#ffe2e2"
-
-    // Default glyph size inside a round button (leaves padding inside the disc).
-    property int iconSize: 34
-
-    property string fontName : "sans-serif";
-
-    //property var specialPaths : [{ "label" : qsTr ("Root"), "uri" : "file:///" }];
-
-    property int fontSize : 16;
-
-    // round buttons
-    property int roundButtonWidth:  65
-    property int roundButtonHeight: 65
-    property int roundButtonRadius: 32
-    property color roundButtonRed: "#7F0000"
+    // Legacy round-button metrics — retained for pages not yet migrated.
+    property int roundButtonWidth:  44
+    property int roundButtonHeight: 44
+    property int roundButtonRadius: 22
+    property color roundButtonRed:    Theme.destructive
     property color roundButtonYellow: "#FFCA35"
-    property color roundButtonGreen: "#95A751"
-    property color roundButtonHome: "#216E9A"
+    property color roundButtonGreen:  Theme.accent
+    property color roundButtonHome:   Theme.accent
 }

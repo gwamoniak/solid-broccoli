@@ -1,82 +1,101 @@
-import QtQuick 2.0
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.0
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import "."
 
+NavPage {
+    pageTitle: qsTr("Photos")
+    showLargeTitle: true
 
-PageTheme {
-    toolbarTitle: "Picture Albums"
-    toolbarButtons: ToolButton {
-
-        //text:qsTr("ADD")
-        //font.pointSize: 18
-        Layout.preferredHeight:  Style.roundButtonHeight
-        Layout.preferredWidth:   Style.roundButtonWidth
-        //antialiasing: true
-        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        icon.source:"qrc:/images/svg/add-album.svg"
-        icon.color: Style.iconColor
-        icon.width : Style.iconSize
-        icon.height: Style.iconSize
-        background: Rectangle {
-            radius: Style.roundButtonRadius
-            color: Style.roundButtonGreen
+    trailing: Component {
+        ToolButton {
+            icon.source: "qrc:/images/svg/add-album.svg"
+            icon.color: Theme.accent
+            icon.width: 22
+            icon.height: 22
+            background: null
+            onClicked: newAlbumDialog.open()
         }
-        onClicked: {
-            newAlbumDialog.open()
-        }
-
     }
 
     InputDialog {
         id: newAlbumDialog
-        title: "New pictures album"
-        label: "Pictures Album name:"
-        hint: "My Pictures Album"
-
+        title: qsTr("New album")
+        label: qsTr("Album name:")
+        hint: qsTr("My Album")
         onAccepted: {
             editText.focus = false
             albumModel.addAlbumFromName(editText.text)
         }
     }
-    ListView {
 
-        id: albumListPage
-        anchors.margins: 16
-        anchors.rightMargin: Style.roundButtonWidth + 24
-        model: albumModel
-        spacing: 5
+    GridView {
+        id: albumGrid
         anchors.fill: parent
-        delegate: Rectangle{
-            width: albumListPage.width
-            height: 120
-            color: Style.buttonBackground
+        anchors.margins: Theme.screenMargin
+        cellWidth: (width - Theme.gridGap) / 2
+        cellHeight: cellWidth + 48
+        model: albumModel
 
-            MouseArea{
+        delegate: Item {
+            width: albumGrid.cellWidth
+            height: albumGrid.cellHeight
+
+            Rectangle {
                 anchors.fill: parent
-                onClicked: {
-                    albumListPage.currentIndex = index
-                    pictureModel.setAlbumId(id)
-                    pageStack.push("qrc:/AlbumPage.qml",
-                                   { albumName: name, albumRowIndex: index})
+                anchors.margins: Theme.gridGap / 2
+                radius: Theme.radiusCard
+                color: Theme.surface
 
+                Column {
+                    anchors.fill: parent
+                    spacing: 0
+
+                    Rectangle {
+                        width: parent.width
+                        height: parent.width
+                        radius: Theme.radiusCard
+                        color: Theme.fill
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: name.charAt(0).toUpperCase()
+                            font.pointSize: 32
+                            color: Theme.secondaryLabel
+                        }
+                    }
+
+                    Label {
+                        text: name
+                        font.pointSize: Theme.subhead
+                        font.weight: Font.Medium
+                        color: Theme.label
+                        elide: Text.ElideRight
+                        width: parent.width
+                        leftPadding: 10
+                        topPadding: 8
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        pictureModel.setAlbumId(id)
+                        if (owningStack) {
+                            owningStack.push("qrc:/AlbumPage.qml",
+                                { albumName: name, albumRowIndex: index, owningStack: owningStack })
+                        }
+                    }
                 }
             }
+        }
 
-            Text{
-                text: name
-                font.pointSize: 16
-                color: Style.text
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-
+        Label {
+            anchors.centerIn: parent
+            visible: albumGrid.count === 0
+            text: qsTr("No albums yet")
+            font.pointSize: Theme.body
+            color: Theme.secondaryLabel
         }
     }
 }
-
-/*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}
-}
- ##^##*/

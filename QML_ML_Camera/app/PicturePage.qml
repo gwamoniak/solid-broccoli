@@ -1,115 +1,84 @@
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import "."
 
-PageTheme {
-
-
+NavPage {
     property string pictureName
     property int pictureIndex
 
-    toolbarTitle: pictureName
-    toolbarButtons: ColumnLayout {
-        RoundButton{
-            id: renameAlbum
-//            text: qsTr("RENAME")
-//            font.pointSize: 18
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  Style.roundButtonHeight
-            Layout.preferredWidth:   Style.roundButtonWidth
-            antialiasing: true
-            icon.source:"qrc:/images/svg/rename.svg"
-            icon.color: Style.iconColor
-            icon.width : Style.iconSize
-            icon.height: Style.iconSize
-            background: Rectangle {
-                radius: Style.roundButtonRadius
-                color: Style.roundButtonYellow
-            }
-            onClicked: {
-                renamePhotoDialog.open()
-            }
-        }
-        RoundButton {
-            //text: qsTr("DELETE")
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  Style.roundButtonHeight
-            Layout.preferredWidth:   Style.roundButtonWidth
-            antialiasing: true
-            icon.source:"qrc:/images/svg/delete.svg"
-            icon.color: Style.dangerColor
-            icon.width : Style.iconSize
-            icon.height: Style.iconSize
-            background: Rectangle {
-                radius: Style.roundButtonRadius
-                color: Style.roundButtonRed
-            }
-            onClicked: {
-                pictureModel.removeRows(pictureIndex, 1)
-                stackView.pop()
-            }
-        }
+    pageTitle: pictureName
 
+    trailing: Component {
+        Row {
+            spacing: 4
+            ToolButton {
+                icon.source: "qrc:/images/svg/rename.svg"
+                icon.color: Theme.accent
+                icon.width: 20; icon.height: 20
+                background: null
+                onClicked: renamePhotoDialog.open()
+            }
+            ToolButton {
+                icon.source: "qrc:/images/svg/delete.svg"
+                icon.color: Theme.destructive
+                icon.width: 20; icon.height: 20
+                background: null
+                onClicked: {
+                    pictureModel.removeRows(pictureIndex, 1)
+                    if (owningStack) owningStack.pop()
+                }
+            }
+        }
     }
 
-    ListView{
-
+    ListView {
         id: pictureListView
         model: pictureModel
         anchors.fill: parent
-        spacing: 5
+        spacing: 0
         orientation: Qt.Horizontal
         snapMode: ListView.SnapOneItem
         currentIndex: pictureIndex
 
+        Component.onCompleted: {
+            positionViewAtIndex(currentIndex, ListView.SnapPosition)
+        }
 
-    Component.onCompleted: {
-        positionViewAtIndex(currentIndex,ListView.SnapPosition)
+        onMovementEnded: {
+            var item = itemAt(contentX, contentY)
+            if (item) currentIndex = item.itemIndex
+        }
 
+        onCurrentItemChanged: {
+            if (currentItem) {
+                pictureName = currentItem.itemName
+            }
+        }
 
-    }
-    onMovementEnded: {
-        currentIndex = itemAt(contentX, contentY).itemIndex
-    }
+        delegate: Rectangle {
+            property int itemIndex: index
+            property string itemName: name
 
-    onCurrentItemChanged: {
-        toolbarTitle = currentItem.itemName
-        pictureName  = currentItem.itemName
-    }
+            width: ListView.view.width === 0 ? parent.width : ListView.view.width
+            height: pictureListView.height
+            color: "transparent"
 
-
-    delegate: Rectangle {
-        property int itemIndex: index
-        property string itemName: name
-
-        // delegate is instanciated first so listview has no dimension,
-        // causing positionViewAtIndex to fail...
-        width: ListView.view.width === 0 ? parent.width : ListView.view.width
-        height: pictureListView.height
-        color: "transparent"
-
-        Image {
-            fillMode: Image.PreserveAspectFit
-            cache: false
-            width: parent.width
-            height: parent.height
-            source: "image://pictures/" + index + "/full"
-
+            Image {
+                fillMode: Image.PreserveAspectFit
+                cache: false
+                width: parent.width
+                height: parent.height
+                source: "image://pictures/" + index + "/full"
+            }
         }
     }
 
-}
-
     InputDialog {
-
-        property string hintName : pictureName
-
         id: renamePhotoDialog
-        title: "Rename a photo"
-        label: "Photo name:"
-        hint: hintName
-
+        title: qsTr("Rename photo")
+        label: qsTr("Photo name:")
+        hint: pictureName
         onAccepted: {
             editText.focus = false
             pictureModel.rename(pictureIndex, editText.text)

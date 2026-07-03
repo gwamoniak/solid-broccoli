@@ -4,65 +4,44 @@ import QtQuick.Controls
 import QtMultimedia
 import "."
 
-PageTheme {
+NavPage {
     id: moviePage
 
     property string movieName
     property url movieUrl
     property int movieIndex
 
-    toolbarTitle: movieName
+    pageTitle: movieName
+
+    trailing: Component {
+        Row {
+            spacing: 4
+            ToolButton {
+                icon.source: "qrc:/images/svg/rename.svg"
+                icon.color: Theme.accent
+                icon.width: 20; icon.height: 20
+                background: null
+                onClicked: renameMovieDialog.open()
+            }
+            ToolButton {
+                icon.source: "qrc:/images/svg/delete.svg"
+                icon.color: Theme.destructive
+                icon.width: 20; icon.height: 20
+                background: null
+                onClicked: {
+                    player.stop()
+                    movieModel.removeRows(movieIndex, 1)
+                    if (owningStack) owningStack.pop()
+                }
+            }
+        }
+    }
 
     MediaPlayer {
         id: player
         source: movieUrl
-        audioOutput: AudioOutput {
-            id: audioOutput
-            volume: volumeSlider.value
-        }
+        audioOutput: AudioOutput { volume: volumeSlider.value }
         videoOutput: videoOutput
-    }
-
-    toolbarButtons: ColumnLayout {
-        spacing: 5
-
-        RoundButton {
-            id: renameMovie
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight: Style.roundButtonHeight
-            Layout.preferredWidth: Style.roundButtonWidth
-            icon.source: "qrc:/images/svg/rename.svg"
-            icon.color: Style.iconColor
-            icon.width: Style.iconSize
-            icon.height: Style.iconSize
-            background: Rectangle {
-                radius: Style.roundButtonRadius
-                color: Style.roundButtonYellow
-            }
-            onClicked: {
-                renameMovieDialog.open()
-            }
-        }
-
-        RoundButton {
-            id: deleteMovie
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight: Style.roundButtonHeight
-            Layout.preferredWidth: Style.roundButtonWidth
-            icon.source: "qrc:/images/svg/delete.svg"
-            icon.color: Style.dangerColor
-            icon.width: Style.iconSize
-            icon.height: Style.iconSize
-            background: Rectangle {
-                radius: Style.roundButtonRadius
-                color: Style.roundButtonRed
-            }
-            onClicked: {
-                player.stop()
-                movieModel.removeRows(movieIndex, 1)
-                stackView.pop()
-            }
-        }
     }
 
     ColumnLayout {
@@ -88,36 +67,29 @@ PageTheme {
 
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            spacing: 10
+            spacing: 16
 
-            RoundButton {
-                text: "⏪"
-                font.pointSize: 16
+            ToolButton {
+                text: "⏪"; font.pointSize: 16
+                background: null
                 onClicked: player.position = Math.max(0, player.position - 10000)
             }
-
-            RoundButton {
-                id: playPauseButton
+            ToolButton {
                 text: player.playbackState === MediaPlayer.PlayingState ? "⏸" : "▶"
-                font.pointSize: 16
+                font.pointSize: 16; background: null
                 onClicked: {
-                    if (player.playbackState === MediaPlayer.PlayingState) {
+                    if (player.playbackState === MediaPlayer.PlayingState)
                         player.pause()
-                    } else {
+                    else
                         player.play()
-                    }
                 }
             }
-
-            RoundButton {
-                text: "⏹"
-                font.pointSize: 16
+            ToolButton {
+                text: "⏹"; font.pointSize: 16; background: null
                 onClicked: player.stop()
             }
-
-            RoundButton {
-                text: "⏩"
-                font.pointSize: 16
+            ToolButton {
+                text: "⏩"; font.pointSize: 16; background: null
                 onClicked: player.position = Math.min(player.duration, player.position + 10000)
             }
 
@@ -129,16 +101,14 @@ PageTheme {
                     }
                     return fmt(player.position) + " / " + fmt(player.duration)
                 }
-                color: Style.text
-                font.pointSize: 14
+                color: Theme.label
+                font.pointSize: Theme.footnote
             }
 
             Slider {
                 id: volumeSlider
                 Layout.preferredWidth: 100
-                from: 0
-                to: 1
-                value: 0.5
+                from: 0; to: 1; value: 0.5
             }
         }
     }
@@ -148,7 +118,6 @@ PageTheme {
         title: qsTr("Rename recording")
         label: qsTr("Recording name:")
         hint: movieName
-
         onAccepted: {
             editText.focus = false
             movieModel.rename(movieIndex, editText.text)

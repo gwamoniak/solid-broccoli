@@ -1,43 +1,95 @@
-import QtQuick 2.6
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.2
-import "." // QTBUG-34418, singletons require explicit import to load qmldir file
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import "."
 
 ApplicationWindow {
-
-    readonly property alias pageStack: stackView
-
-    function goHome() {
-        console.log("Navigation: goHome requested. Current depth:", stackView.depth)
-        stackView.clear(StackView.Immediate)
-        stackView.push("qrc:/MainPage.qml", {}, StackView.Immediate)
-    }
-
     id: window
     visible: true
     width: 1280
     height: 800
-    title: qsTr("UIX")
-    color: Style.windowBackground
+    title: qsTr("SolidBroccoli")
+    color: Theme.groupedBackground
 
+    // Legacy compat: some pages still reference window.pageStack / goHome().
+    readonly property alias pageStack: photosStack
+    function goHome() {
+        tabBar.currentIndex = 0
+        photosStack.pop(null)
+    }
 
-    StackView {
-        id: stackView
-        anchors.fill: parent
-        clip: true
-        initialItem: MainPage {}
-        pushEnter: null
-        pushExit: null
-        popEnter: null
-        popExit: null
-        replaceEnter: null
-        replaceExit: null
+    StackLayout {
+        id: tabContent
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: tabBarContainer.top
+        currentIndex: tabBar.currentIndex
 
-        onCurrentItemChanged: {
-            console.log("Navigation: current page changed. Depth:", depth, "item:", currentItem)
+        StackView {
+            id: photosStack
+            initialItem: AlbumListPage { owningStack: photosStack }
+        }
+        StackView {
+            id: videosStack
+            initialItem: MovieAlbumPage { owningStack: videosStack }
+        }
+        StackView {
+            id: cameraStack
+            initialItem: CameraPage { owningStack: cameraStack }
+        }
+        StackView {
+            id: settingsStack
+            initialItem: SettingsPage { owningStack: settingsStack }
         }
     }
 
+    Rectangle {
+        id: tabBarContainer
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: Theme.tabBarHeight
+        color: Theme.surface
 
+        Rectangle {
+            anchors.top: parent.top
+            width: parent.width
+            height: Theme.hairline
+            color: Theme.separator
+        }
+
+        TabBar {
+            id: tabBar
+            anchors.fill: parent
+            anchors.topMargin: Theme.hairline
+            background: null
+
+            Repeater {
+                model: [
+                    { icon: "qrc:/images/svg/gallery.svg",   label: qsTr("Photos") },
+                    { icon: "qrc:/images/svg/movie.svg",     label: qsTr("Videos") },
+                    { icon: "qrc:/images/svg/camera.svg",    label: qsTr("Camera") },
+                    { icon: "qrc:/images/svg/settings.svg",  label: qsTr("Settings") }
+                ]
+
+                TabButton {
+                    id: tabButton
+                    width: tabBarContainer.width / 4
+                    height: tabBarContainer.height - Theme.hairline
+                    background: null
+                    icon.source: modelData.icon
+                    icon.width: 22
+                    icon.height: 22
+                    icon.color: tabButton.checked ? Theme.accent : Theme.secondaryLabel
+                    text: modelData.label
+                    display: AbstractButton.TextUnderIcon
+                    spacing: 2
+                    font.pointSize: Theme.caption
+                    palette.windowText: tabButton.checked ? Theme.accent : Theme.secondaryLabel
+                    palette.buttonText: tabButton.checked ? Theme.accent : Theme.secondaryLabel
+                }
+            }
+        }
+    }
 }
