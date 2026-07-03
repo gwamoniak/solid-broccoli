@@ -11,6 +11,8 @@
 #include "PictureDAO.h"
 #include "LoggerDAO.h"
 #include "MovieDAO.h"
+#include "SessionDAO.h"
+#include "SpectrumDAO.h"
 
 class QSqlQuery;
 class QSqlDatabase;
@@ -44,6 +46,8 @@ public:
     const PictureDAO m_pictureDao;
     const LoggerDAO m_loggerDao;
     const MovieDAO m_movieDao;
+    const SessionDAO m_sessionDao;
+    const SpectrumDAO m_spectrumDao;
 };
 
 #endif // DATABASEMANAGER_H

@@ -42,6 +42,11 @@ void SpectrumView::setSource(SpectrometerService* source)
             if (m_autoScaleY)
                 m_maxY = 0.0;
         });
+        connect(m_source, &SpectrometerService::overlaysChanged, this, [this]() {
+            m_overlays = m_source->overlaySpectra();
+            update();
+        });
+        m_overlays = m_source->overlaySpectra();
     }
     emit sourceChanged();
 }
@@ -443,6 +448,9 @@ QSGNode* SpectrumView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*)
         addTrace(m_dark, m_darkTraceColor);
     if (m_showReference)
         addTrace(m_reference, m_referenceColor);
+    const QColor overlayColors[3] = {m_overlayColor1, m_overlayColor2, m_overlayColor3};
+    for (int i = 0; i < m_overlays.size(); ++i)
+        addTrace(m_overlays[i], overlayColors[i % 3]);
     addTrace(m_live, m_traceColor);
 
     return root;

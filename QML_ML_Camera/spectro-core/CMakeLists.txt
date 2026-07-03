@@ -7,6 +7,8 @@ qt_add_library(spectro-core SHARED
     SensorTransport.h
     SpectroAnalysis.cpp
     SpectroAnalysis.h
+    SpectrumExporter.cpp
+    SpectrumExporter.h
     Spectrum.cpp
     Spectrum.h
     spectro-core_global.h

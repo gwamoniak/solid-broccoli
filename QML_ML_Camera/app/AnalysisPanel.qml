@@ -12,6 +12,7 @@ Rectangle {
     color: Theme.surface
 
     property var plotView: null
+    signal saveRequested()
 
     Rectangle {
         anchors.left: parent.left
@@ -216,7 +217,7 @@ Rectangle {
                 height: 40
                 text: qsTr("Save capture")
                 enabled: SpectrometerService.acquiring || SpectrometerService.hold
-                onClicked: SpectrometerService.saveCapture("", "")
+                onClicked: panel.saveRequested()
                 background: Rectangle {
                     radius: Theme.radiusControl
                     color: saveBtn.down ? Theme.accentPressed : Theme.accent

@@ -37,6 +37,8 @@ qt_add_resources(QML_ML_Camera_App app_resources
         NavPage.qml
         PageTheme.qml
         PicturePage.qml
+        SaveCaptureDialog.qml
+        SessionDetailPage.qml
         SessionsPage.qml
         SettingsPage.qml
         SettingSwitcher.qml

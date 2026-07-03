@@ -33,6 +33,9 @@ class SpectrumView : public QQuickItem
     Q_PROPERTY(QColor referenceColor MEMBER m_referenceColor NOTIFY colorsChanged)
     Q_PROPERTY(QColor darkTraceColor MEMBER m_darkTraceColor NOTIFY colorsChanged)
     Q_PROPERTY(QColor regionColor MEMBER m_regionColor NOTIFY colorsChanged)
+    Q_PROPERTY(QColor overlayColor1 MEMBER m_overlayColor1 NOTIFY colorsChanged)
+    Q_PROPERTY(QColor overlayColor2 MEMBER m_overlayColor2 NOTIFY colorsChanged)
+    Q_PROPERTY(QColor overlayColor3 MEMBER m_overlayColor3 NOTIFY colorsChanged)
     Q_PROPERTY(double integrationFromNm READ integrationFromNm WRITE setIntegrationFromNm NOTIFY integrationRegionChanged)
     Q_PROPERTY(double integrationToNm READ integrationToNm WRITE setIntegrationToNm NOTIFY integrationRegionChanged)
 
@@ -104,6 +107,7 @@ private:
     Spectrum m_live;
     Spectrum m_reference;
     Spectrum m_dark;
+    QVector<Spectrum> m_overlays;
 
     double m_minX = 340.0;
     double m_maxX = 1020.0;
@@ -123,6 +127,9 @@ private:
     QColor m_referenceColor{0x64, 0xD2, 0xFF};
     QColor m_darkTraceColor{0x8E, 0x8E, 0x93};
     QColor m_regionColor{255, 225, 0, 38};
+    QColor m_overlayColor1{0xFF, 0x9F, 0x0A};
+    QColor m_overlayColor2{0xBF, 0x5A, 0xF2};
+    QColor m_overlayColor3{0x5A, 0xC8, 0xFA};
     double m_integrationFromNm = qQNaN();
     double m_integrationToNm = qQNaN();
 

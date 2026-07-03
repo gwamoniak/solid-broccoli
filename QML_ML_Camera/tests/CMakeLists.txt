@@ -39,6 +39,12 @@ add_camera_test(tst_spectrometerservice
 )
 target_include_directories(tst_spectrometerservice PRIVATE ${CMAKE_SOURCE_DIR}/app)
 target_link_libraries(tst_spectrometerservice PRIVATE spectro-core spectro-sim)
+
+# Session persistence + export (Milestone 7).
+add_camera_test(tst_sessiondao tst_sessiondao.cpp)
+target_link_libraries(tst_sessiondao PRIVATE spectro-core spectro-sim)
+add_camera_test(tst_spectrumexporter tst_spectrumexporter.cpp)
+target_link_libraries(tst_spectrumexporter PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 

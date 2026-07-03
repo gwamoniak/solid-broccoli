@@ -10,6 +10,8 @@
 
 class PeakListModel;
 class SensorDevice;
+class SessionModel;
+class SessionSpectrumModel;
 
 // Single C++ owner of the spectrometer pipeline, mirroring CameraService:
 // QML never constructs device objects — it binds to these properties and
@@ -38,6 +40,7 @@ class SpectrometerService : public QObject
     Q_PROPERTY(bool hasIntegrationRegion READ hasIntegrationRegion NOTIFY integrationRegionChanged)
     Q_PROPERTY(double integralValue READ integralValue NOTIFY spectrumUpdated)
     Q_PROPERTY(QObject* peakModel READ peakModel CONSTANT)
+    Q_PROPERTY(QVariantList overlayIds READ overlayIds NOTIFY overlaysChanged)
 
 public:
     explicit SpectrometerService(QObject* parent = nullptr);
@@ -90,6 +93,15 @@ public:
     Q_INVOKABLE void setIntegrationRegion(double fromNm, double toNm);
     Q_INVOKABLE void clearIntegrationRegion();
     Q_INVOKABLE void saveCapture(const QString& name, const QString& tags);
+    Q_INVOKABLE void toggleOverlay(int spectrumId);
+    Q_INVOKABLE void clearOverlays();
+    Q_INVOKABLE bool exportCapture(int spectrumId);
+
+    // Session persistence (models owned by main; null in headless tests,
+    // where saveCapture degrades to an error signal).
+    void setSessionStore(SessionModel* sessions, SessionSpectrumModel* spectra);
+    QVariantList overlayIds() const;
+    QVector<Spectrum> overlaySpectra() const;
 
     // Thread-safe copy of the latest spectrum, for readers on other threads
     // (the video-overlay processor in Milestone 8).
@@ -113,6 +125,8 @@ signals:
     void calibrationChanged();
     void smoothingWindowChanged();
     void integrationRegionChanged();
+    void overlaysChanged();
+    void captureSaved(const QString& sessionName);
     void spectrumUpdated();
     void errorOccurred(const QString& message);
 
@@ -142,6 +156,13 @@ private:
     double m_integrationToNm = qQNaN();
     double m_integralValue = qQNaN();
     PeakListModel* m_peakModel = nullptr;
+
+    SessionModel* m_sessionModel = nullptr;
+    SessionSpectrumModel* m_spectrumModel = nullptr;
+    int m_activeSessionId = -1;
+    bool m_darkStored = false;
+    bool m_referenceStored = false;
+    QVector<QPair<int, Spectrum>> m_overlays;  // stored-spectrum id -> data
     Spectrum m_dark;
     Spectrum m_reference;
     Spectrum m_display;

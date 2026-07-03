@@ -123,6 +123,9 @@ NavPage {
                 traceColor: Theme.traceLive
                 referenceColor: Theme.traceReference
                 darkTraceColor: Theme.traceDark
+                overlayColor1: Theme.traceOverlay1
+                overlayColor2: Theme.traceOverlay2
+                overlayColor3: Theme.traceOverlay3
                 regionColor: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
                 integrationFromNm: SpectrometerService.integrationFromNm
                 integrationToNm: SpectrometerService.integrationToNm
@@ -208,6 +211,7 @@ NavPage {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 320
                 plotView: spectrumView
+                onSaveRequested: saveCaptureDialog.open()
             }
         }
 
@@ -390,7 +394,16 @@ NavPage {
         AnalysisPanel {
             anchors.fill: parent
             plotView: spectrumView
+            onSaveRequested: {
+                analysisDrawer.close()
+                saveCaptureDialog.open()
+            }
         }
+    }
+
+    SaveCaptureDialog {
+        id: saveCaptureDialog
+        onAccepted: SpectrometerService.saveCapture(nameText, tagsText)
     }
 
     Connections {

@@ -7,6 +7,8 @@
 #include "AlbumModel.h"
 #include "PictureModel.h"
 #include "MovieModel.h"
+#include "SessionModel.h"
+#include "SessionSpectrumModel.h"
 #include "DatabaseManager.h"
 #include "StorageLocations.h"
 #include "logger.h"
@@ -48,6 +50,8 @@ int main(int argc, char *argv[])
     PictureModel pictureModel(db, albumModel);
     LoggerModel  loggerModel(db);
     MovieModel   movieModel(db);
+    SessionModel sessionModel(db);
+    SessionSpectrumModel sessionSpectrumModel(db);
 
     // The plugin manager must outlive CameraService: the service's worker
     // thread runs processor code that lives in the loaded plugin libraries,
@@ -75,6 +79,7 @@ int main(int argc, char *argv[])
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
 
     SpectrometerService spectrometerService;
+    spectrometerService.setSessionStore(&sessionModel, &sessionSpectrumModel);
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
                                  &spectrometerService);
     qmlRegisterType<SpectrumView>("solid.broccoli", 1, 0, "SpectrumView");
@@ -85,6 +90,8 @@ int main(int argc, char *argv[])
     context->setContextProperty("pictureModel", &pictureModel);
     context->setContextProperty("loggerModel",  &loggerModel);
     context->setContextProperty("movieModel",   &movieModel);
+    context->setContextProperty("sessionModel", &sessionModel);
+    context->setContextProperty("sessionSpectrumModel", &sessionSpectrumModel);
     context->setContextProperty("pluginModel",  &pluginManager);
     context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));

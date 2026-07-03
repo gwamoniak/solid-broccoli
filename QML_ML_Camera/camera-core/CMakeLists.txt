@@ -23,6 +23,14 @@ qt_add_library(camera-core SHARED
     PictureDAO.h
     PictureModel.cpp
     PictureModel.h
+    SessionDAO.cpp
+    SessionDAO.h
+    SessionModel.cpp
+    SessionModel.h
+    SessionSpectrumModel.cpp
+    SessionSpectrumModel.h
+    SpectrumDAO.cpp
+    SpectrumDAO.h
     StorageLocations.cpp
     StorageLocations.h
     ThumbnailCache.cpp
@@ -36,6 +44,7 @@ target_link_libraries(camera-core
         Qt6::Gui
         Qt6::Sql
         logger-core
+        spectro-core
 )
 
 target_compile_definitions(camera-core

@@ -2,10 +2,20 @@
 
 #include <algorithm>
 
+#include <QDateTime>
+#include <QDesktopServices>
+#include <QRegularExpression>
+#include <QUrl>
+
 #include "PeakListModel.h"
 #include "SensorDevice.h"
+#include "SessionModel.h"
+#include "SessionSpectrumModel.h"
 #include "SimulatedSpectrometer.h"
 #include "SpectroAnalysis.h"
+#include "SpectrumDAO.h"
+#include "SpectrumExporter.h"
+#include "StorageLocations.h"
 #include "loggingcategories.h"
 
 SpectrometerService::SpectrometerService(QObject* parent)
@@ -212,11 +222,142 @@ void SpectrometerService::clearIntegrationRegion()
     emit spectrumUpdated();
 }
 
+void SpectrometerService::setSessionStore(SessionModel* sessions,
+                                          SessionSpectrumModel* spectra)
+{
+    m_sessionModel = sessions;
+    m_spectrumModel = spectra;
+}
+
 void SpectrometerService::saveCapture(const QString& name, const QString& tags)
 {
-    // Wired to the session store in Milestone 7.
-    qDebug(logInfo()) << "SpectrometerService: saveCapture stub (Milestone 7):"
-                      << name << tags;
+    if (!m_sessionModel || !m_spectrumModel) {
+        emit errorOccurred(tr("No session store available."));
+        return;
+    }
+    if (!m_liveSpectrum.isValid()) {
+        emit errorOccurred(tr("Nothing to save yet — start acquisition first."));
+        return;
+    }
+
+    if (m_activeSessionId < 0) {
+        const QString sessionName = QStringLiteral("Session ")
+            + QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"));
+        m_activeSessionId = m_sessionModel->addSessionFromName(sessionName);
+        m_darkStored = false;
+        m_referenceStored = false;
+        qDebug(logInfo()) << "SpectrometerService: session created:" << sessionName;
+    }
+
+    // The calibration pair belongs with the data it corrects; store each
+    // once per session.
+    if (hasDark() && !m_darkStored) {
+        m_spectrumModel->addSpectrum(m_activeSessionId, m_dark,
+                                     QStringLiteral("Dark"), QString());
+        m_darkStored = true;
+    }
+    if (hasReference() && !m_referenceStored) {
+        m_spectrumModel->addSpectrum(m_activeSessionId, m_reference,
+                                     QStringLiteral("Reference"), QString());
+        m_referenceStored = true;
+    }
+
+    Spectrum sample = m_hold ? m_held : m_liveSpectrum;
+    sample.kind = Spectrum::Kind::Sample;
+    const QString captureName = name.isEmpty()
+        ? QStringLiteral("Sample ")
+              + QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss"))
+        : name;
+    m_spectrumModel->addSpectrum(m_activeSessionId, sample, captureName, tags);
+    m_sessionModel->refresh();
+    qDebug(logInfo()) << "SpectrometerService: capture saved:" << captureName
+                      << "tags:" << tags;
+    emit captureSaved(captureName);
+}
+
+QVariantList SpectrometerService::overlayIds() const
+{
+    QVariantList ids;
+    for (const auto& overlay : m_overlays)
+        ids.append(overlay.first);
+    return ids;
+}
+
+QVector<Spectrum> SpectrometerService::overlaySpectra() const
+{
+    QVector<Spectrum> spectra;
+    spectra.reserve(m_overlays.size());
+    for (const auto& overlay : m_overlays)
+        spectra.append(overlay.second);
+    return spectra;
+}
+
+void SpectrometerService::toggleOverlay(int spectrumId)
+{
+    for (int i = 0; i < m_overlays.size(); ++i) {
+        if (m_overlays[i].first == spectrumId) {
+            m_overlays.removeAt(i);
+            emit overlaysChanged();
+            return;
+        }
+    }
+    if (!m_spectrumModel)
+        return;
+    const SpectrumEntry entry = m_spectrumModel->entryById(spectrumId);
+    if (!entry.isValid()) {
+        emit errorOccurred(tr("Capture could not be loaded."));
+        return;
+    }
+    if (m_overlays.size() >= 3)
+        m_overlays.removeFirst();
+    m_overlays.append({spectrumId, entry.spectrum});
+    qDebug(logInfo()) << "SpectrometerService: overlay added:" << entry.name;
+    emit overlaysChanged();
+}
+
+void SpectrometerService::clearOverlays()
+{
+    if (m_overlays.isEmpty())
+        return;
+    m_overlays.clear();
+    emit overlaysChanged();
+}
+
+bool SpectrometerService::exportCapture(int spectrumId)
+{
+    if (!m_spectrumModel)
+        return false;
+    const SpectrumEntry entry = m_spectrumModel->entryById(spectrumId);
+    if (!entry.isValid()) {
+        emit errorOccurred(tr("Capture could not be loaded."));
+        return false;
+    }
+
+    SpectrumExportMetadata meta;
+    meta.name = entry.name;
+    meta.kind = SpectrumDAO::kindToString(entry.spectrum.kind);
+    meta.createdUtc = entry.createdUtc;
+    meta.tags = entry.tags;
+    meta.integrationMs = entry.spectrum.params.integrationTimeMs;
+    meta.averaging = entry.spectrum.params.averaging;
+
+    QString base = entry.name;
+    base.replace(QRegularExpression(QStringLiteral("[^A-Za-z0-9_-]")),
+                 QStringLiteral("_"));
+    if (base.isEmpty())
+        base = QStringLiteral("spectrum_%1").arg(spectrumId);
+
+    const QString dir = StorageLocations::exportsDir();
+    QString error;
+    if (!SpectrumExporter::exportCsv(entry.spectrum, meta, dir + "/" + base + ".csv", &error)
+        || !SpectrumExporter::exportJson(entry.spectrum, meta, dir + "/" + base + ".json", &error)) {
+        qWarning(logCritical()) << "SpectrometerService: export failed:" << error;
+        emit errorOccurred(error);
+        return false;
+    }
+    qDebug(logInfo()) << "SpectrometerService: exported" << base << "to" << dir;
+    QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
+    return true;
 }
 
 void SpectrometerService::recomputeDerived()

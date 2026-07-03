@@ -38,7 +38,9 @@ DatabaseManager::DatabaseManager(const QString& _path) :
     m_albumDao(*m_sqlDataBase),
     m_pictureDao(*m_sqlDataBase),
     m_loggerDao(*m_sqlDataBase),
-    m_movieDao(*m_sqlDataBase)
+    m_movieDao(*m_sqlDataBase),
+    m_sessionDao(*m_sqlDataBase),
+    m_spectrumDao(*m_sqlDataBase)
 {
     m_sqlDataBase->setDatabaseName(_path);
 
@@ -50,6 +52,8 @@ DatabaseManager::DatabaseManager(const QString& _path) :
     m_pictureDao.init();
     m_loggerDao.init();
     m_movieDao.init();
+    m_sessionDao.init();
+    m_spectrumDao.init();
 }
 
 DatabaseManager::~DatabaseManager()
