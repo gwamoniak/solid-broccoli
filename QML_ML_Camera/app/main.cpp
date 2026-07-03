@@ -12,6 +12,7 @@
 #include "LoggerModel.h"
 #include "PictureProvider.h"
 #include "CameraService.h"
+#include "SpectrometerService.h"
 #include "CaptureCoordinator.h"
 #include "PluginManager.h"
 #include "AppSettings.h"
@@ -65,6 +66,10 @@ int main(int argc, char *argv[])
 
     AppSettings appSettings;
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
+
+    SpectrometerService spectrometerService;
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
+                                 &spectrometerService);
 
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
     context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());

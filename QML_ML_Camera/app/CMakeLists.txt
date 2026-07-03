@@ -13,6 +13,8 @@ qt_add_executable(QML_ML_Camera_App
     PluginManager.h
     PictureProvider.cpp
     PictureProvider.h
+    SpectrometerService.cpp
+    SpectrometerService.h
 )
 
 qt_add_resources(QML_ML_Camera_App app_resources
@@ -64,6 +66,8 @@ target_link_libraries(QML_ML_Camera_App
         camera-core
         logger-core
         processor-api
+        spectro-core
+        spectro-sim
 )
 
 # Build the proof plugin alongside the app so it lands in app/plugins/ and is
