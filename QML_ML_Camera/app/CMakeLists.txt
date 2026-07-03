@@ -13,6 +13,8 @@ qt_add_executable(QML_ML_Camera_App
     PluginManager.h
     PictureProvider.cpp
     PictureProvider.h
+    PeakListModel.cpp
+    PeakListModel.h
     SpectrometerService.cpp
     SpectrometerService.h
     SpectrumView.cpp
@@ -24,6 +26,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
     FILES
         AlbumListPage.qml
         AlbumPage.qml
+        AnalysisPanel.qml
         CameraPage.qml
         InputDialog.qml
         LivePage.qml

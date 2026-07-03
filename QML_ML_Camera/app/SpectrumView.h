@@ -32,6 +32,9 @@ class SpectrumView : public QQuickItem
     Q_PROPERTY(QColor traceColor MEMBER m_traceColor NOTIFY colorsChanged)
     Q_PROPERTY(QColor referenceColor MEMBER m_referenceColor NOTIFY colorsChanged)
     Q_PROPERTY(QColor darkTraceColor MEMBER m_darkTraceColor NOTIFY colorsChanged)
+    Q_PROPERTY(QColor regionColor MEMBER m_regionColor NOTIFY colorsChanged)
+    Q_PROPERTY(double integrationFromNm READ integrationFromNm WRITE setIntegrationFromNm NOTIFY integrationRegionChanged)
+    Q_PROPERTY(double integrationToNm READ integrationToNm WRITE setIntegrationToNm NOTIFY integrationRegionChanged)
 
 public:
     explicit SpectrumView(QQuickItem* parent = nullptr);
@@ -54,7 +57,13 @@ public:
     void setShowDark(bool show);
     QVariantList tickWavelengths() const;
 
+    double integrationFromNm() const { return m_integrationFromNm; }
+    void setIntegrationFromNm(double nm);
+    double integrationToNm() const { return m_integrationToNm; }
+    void setIntegrationToNm(double nm);
+
     Q_INVOKABLE double wavelengthToX(double nm) const;
+    Q_INVOKABLE double valueToY(double value) const;
     Q_INVOKABLE void centerOn(double nm);
     Q_INVOKABLE void resetView();
 
@@ -67,6 +76,7 @@ signals:
     void xTickStepChanged();
     void traceVisibilityChanged();
     void colorsChanged();
+    void integrationRegionChanged();
 
 protected:
     QSGNode* updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) override;
@@ -112,6 +122,9 @@ private:
     QColor m_traceColor{0xFF, 0xE1, 0x00};
     QColor m_referenceColor{0x64, 0xD2, 0xFF};
     QColor m_darkTraceColor{0x8E, 0x8E, 0x93};
+    QColor m_regionColor{255, 225, 0, 38};
+    double m_integrationFromNm = qQNaN();
+    double m_integrationToNm = qQNaN();
 
     double m_lastMouseX = 0.0;
     double m_lastPinchDistance = 0.0;

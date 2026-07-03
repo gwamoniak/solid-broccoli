@@ -29,6 +29,16 @@ target_link_libraries(tst_codecdevice PRIVATE spectro-core)
 # spectro-sim: analysis validated against simulator-injected ground truth.
 add_camera_test(tst_spectrosim tst_spectrosim.cpp)
 target_link_libraries(tst_spectrosim PRIVATE spectro-core spectro-sim)
+
+# SpectrometerService lives in the app target; compile its sources into the
+# test directly (same pattern as tst_pluginmanager).
+add_camera_test(tst_spectrometerservice
+    tst_spectrometerservice.cpp
+    ${CMAKE_SOURCE_DIR}/app/SpectrometerService.cpp
+    ${CMAKE_SOURCE_DIR}/app/PeakListModel.cpp
+)
+target_include_directories(tst_spectrometerservice PRIVATE ${CMAKE_SOURCE_DIR}/app)
+target_link_libraries(tst_spectrometerservice PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 

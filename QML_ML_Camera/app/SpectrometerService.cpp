@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "PeakListModel.h"
 #include "SensorDevice.h"
 #include "SimulatedSpectrometer.h"
 #include "SpectroAnalysis.h"
@@ -9,6 +10,7 @@
 
 SpectrometerService::SpectrometerService(QObject* parent)
     : QObject(parent)
+    , m_peakModel(new PeakListModel(this))
 {
     refreshDevices();
     qDebug(logInfo()) << "SpectrometerService:" << m_devices.size()
@@ -82,6 +84,7 @@ void SpectrometerService::setMode(int mode)
     m_mode = mode;
     qDebug(logInfo()) << "SpectrometerService: display mode" << mode;
     rebuildDisplay();
+    recomputeDerived();
     emit modeChanged();
     emit spectrumUpdated();
 }
@@ -146,12 +149,108 @@ void SpectrometerService::rebuildDisplay()
         || m_dark.counts.size() != m_liveSpectrum.counts.size()
         || m_reference.counts.size() != m_liveSpectrum.counts.size()) {
         m_display = m_liveSpectrum;
+    } else {
+        m_display = m_liveSpectrum;
+        m_display.counts = (m_mode == 1)
+            ? SpectroAnalysis::transmittance(m_liveSpectrum, m_dark, m_reference)
+            : SpectroAnalysis::absorbance(m_liveSpectrum, m_dark, m_reference);
+    }
+    if (m_smoothingWindow > 0)
+        m_display.counts = SpectroAnalysis::savitzkyGolay(m_display.counts,
+                                                          m_smoothingWindow, 2);
+}
+
+void SpectrometerService::setSmoothingWindow(int window)
+{
+    // Normalize: 0 disables, anything else becomes an odd window in [5, 25].
+    if (window > 0) {
+        window = std::clamp(window, 5, 25);
+        if (window % 2 == 0)
+            ++window;
+    } else {
+        window = 0;
+    }
+    if (window == m_smoothingWindow)
+        return;
+    m_smoothingWindow = window;
+    qDebug(logInfo()) << "SpectrometerService: smoothing window" << window;
+    rebuildDisplay();
+    recomputeDerived();
+    emit smoothingWindowChanged();
+    emit spectrumUpdated();
+}
+
+QObject* SpectrometerService::peakModel() const
+{
+    return m_peakModel;
+}
+
+bool SpectrometerService::hasIntegrationRegion() const
+{
+    return !qIsNaN(m_integrationFromNm) && !qIsNaN(m_integrationToNm);
+}
+
+void SpectrometerService::setIntegrationRegion(double fromNm, double toNm)
+{
+    if (fromNm > toNm)
+        std::swap(fromNm, toNm);
+    m_integrationFromNm = fromNm;
+    m_integrationToNm = toNm;
+    qDebug(logInfo()) << "SpectrometerService: integration region"
+                      << fromNm << "-" << toNm << "nm";
+    recomputeDerived();
+    emit integrationRegionChanged();
+    emit spectrumUpdated();
+}
+
+void SpectrometerService::clearIntegrationRegion()
+{
+    m_integrationFromNm = qQNaN();
+    m_integrationToNm = qQNaN();
+    recomputeDerived();
+    emit integrationRegionChanged();
+    emit spectrumUpdated();
+}
+
+void SpectrometerService::saveCapture(const QString& name, const QString& tags)
+{
+    // Wired to the session store in Milestone 7.
+    qDebug(logInfo()) << "SpectrometerService: saveCapture stub (Milestone 7):"
+                      << name << tags;
+}
+
+void SpectrometerService::recomputeDerived()
+{
+    const Spectrum& display = displaySpectrum();
+    if (!display.isValid()) {
+        m_peakModel->setPeaks({});
+        m_integralValue = qQNaN();
+        m_peakWavelengthNm = 0.0;
+        m_peakValue = 0.0;
         return;
     }
-    m_display = m_liveSpectrum;
-    m_display.counts = (m_mode == 1)
-        ? SpectroAnalysis::transmittance(m_liveSpectrum, m_dark, m_reference)
-        : SpectroAnalysis::absorbance(m_liveSpectrum, m_dark, m_reference);
+
+    const auto [minIt, maxIt] = std::minmax_element(display.counts.cbegin(),
+                                                    display.counts.cend());
+    // Auto prominence scales with the display range so it works for raw
+    // counts and for absorbance alike; an explicit peakProminence overrides.
+    const double prominence = m_peakProminence > 0.0
+                                  ? m_peakProminence
+                                  : std::max(0.05 * (*maxIt - *minIt), 1e-6);
+    const auto peaks = SpectroAnalysis::findPeaks(display, prominence, 5.0);
+    m_peakModel->setPeaks(peaks);
+    if (!peaks.isEmpty()) {
+        m_peakWavelengthNm = peaks.first().wavelengthNm;
+        m_peakValue = peaks.first().value;
+    } else {
+        m_peakWavelengthNm = 0.0;
+        m_peakValue = 0.0;
+    }
+
+    m_integralValue = hasIntegrationRegion()
+                          ? SpectroAnalysis::integrate(display, m_integrationFromNm,
+                                                       m_integrationToNm)
+                          : qQNaN();
 }
 
 void SpectrometerService::setIntegrationTimeMs(int ms)
@@ -339,20 +438,7 @@ void SpectrometerService::onSpectrum(SensorDevice* device, const Spectrum& spect
         }
     }
 
-    // Headline peak for the readout strip: prominence threshold scales with
-    // the signal so the readout tracks the dominant line at any exposure.
-    const double maxCount = *std::max_element(spectrum.counts.cbegin(),
-                                              spectrum.counts.cend());
-    const auto peaks = SpectroAnalysis::findPeaks(
-        spectrum, std::max(50.0, 0.05 * maxCount), 5.0);
-    if (!peaks.isEmpty()) {
-        m_peakWavelengthNm = peaks.first().wavelengthNm;
-        m_peakValue = peaks.first().value;
-    } else {
-        m_peakWavelengthNm = 0.0;
-        m_peakValue = 0.0;
-    }
-
+    recomputeDerived();
     emit spectrumUpdated();
 }
 

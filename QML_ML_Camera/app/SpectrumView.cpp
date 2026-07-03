@@ -124,6 +124,27 @@ double SpectrumView::nmAtX(double x) const
     return m_minX + x / width() * (m_maxX - m_minX);
 }
 
+double SpectrumView::valueToY(double value) const
+{
+    if (m_maxY <= m_minY)
+        return 0.0;
+    return height() - (value - m_minY) / (m_maxY - m_minY) * height();
+}
+
+void SpectrumView::setIntegrationFromNm(double nm)
+{
+    m_integrationFromNm = nm;
+    emit integrationRegionChanged();
+    update();
+}
+
+void SpectrumView::setIntegrationToNm(double nm)
+{
+    m_integrationToNm = nm;
+    emit integrationRegionChanged();
+    update();
+}
+
 QVariantList SpectrumView::tickWavelengths() const
 {
     QVariantList ticks;
@@ -365,6 +386,21 @@ QSGNode* SpectrumView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*)
             v[i++].set(float(w), y);
         }
         root->appendChildNode(makeNode(geometry, m_gridColor));
+    }
+
+    // Integration region: translucent band under the traces.
+    if (!qIsNaN(m_integrationFromNm) && !qIsNaN(m_integrationToNm)
+        && m_integrationToNm > m_minX && m_integrationFromNm < m_maxX) {
+        const float x0 = toX(std::max(m_integrationFromNm, m_minX));
+        const float x1 = toX(std::min(m_integrationToNm, m_maxX));
+        auto* geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
+        geometry->setDrawingMode(QSGGeometry::DrawTriangleStrip);
+        auto* v = geometry->vertexDataAsPoint2D();
+        v[0].set(x0, 0.0f);
+        v[1].set(x0, float(h));
+        v[2].set(x1, 0.0f);
+        v[3].set(x1, float(h));
+        root->appendChildNode(makeNode(geometry, m_regionColor));
     }
 
     // Frame: baseline + top edge in the stronger axis color.

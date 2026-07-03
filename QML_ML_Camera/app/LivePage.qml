@@ -100,7 +100,12 @@ NavPage {
             }
         }
 
-        // ── Plot ──
+        // ── Plot + docked analysis panel (tablet layout at ≥ 900 px) ──
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
+
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -118,6 +123,46 @@ NavPage {
                 traceColor: Theme.traceLive
                 referenceColor: Theme.traceReference
                 darkTraceColor: Theme.traceDark
+                regionColor: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
+                integrationFromNm: SpectrometerService.integrationFromNm
+                integrationToNm: SpectrometerService.integrationToNm
+            }
+
+            // Peak markers: triangle + λ, placed by the item's mapping
+            // functions, updating in place as the model rows change.
+            Repeater {
+                model: SpectrometerService.peakModel
+                delegate: Column {
+                    id: peakMarker
+                    required property double wavelengthNm
+                    required property double value
+                    spacing: 0
+                    visible: peakMarker.wavelengthNm >= spectrumView.minWavelength
+                             && peakMarker.wavelengthNm <= spectrumView.maxWavelength
+                    x: {
+                        spectrumView.minWavelength; spectrumView.maxWavelength; spectrumView.width
+                        spectrumView.x + spectrumView.wavelengthToX(peakMarker.wavelengthNm) - width / 2
+                    }
+                    y: {
+                        spectrumView.yMax
+                        Math.max(spectrumView.y,
+                                 spectrumView.y + spectrumView.valueToY(peakMarker.value) - height - 6)
+                    }
+
+                    Label {
+                        text: peakMarker.wavelengthNm.toFixed(1)
+                        font.family: Theme.readoutFontName
+                        font.pointSize: Theme.caption
+                        color: Theme.accent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    Label {
+                        text: "▾"
+                        font.pointSize: Theme.caption
+                        color: Theme.accent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
             }
 
             // Value-scale readout (top-left, inside the plot).
@@ -155,6 +200,14 @@ NavPage {
                 text: spectrumView.xAxisTitle
                 font.pointSize: Theme.caption
                 color: Theme.tertiaryLabel
+            }
+        }
+
+            AnalysisPanel {
+                visible: livePage.width >= 900
+                Layout.fillHeight: true
+                Layout.preferredWidth: 320
+                plotView: spectrumView
             }
         }
 
@@ -316,8 +369,27 @@ NavPage {
                         active: SpectrometerService.hold
                         onClicked: SpectrometerService.hold = !SpectrometerService.hold
                     }
+
+                    CaptureButton {
+                        text: "⋯"
+                        visible: livePage.width < 900
+                        width: 40
+                        onClicked: analysisDrawer.open()
+                    }
                 }
             }
+        }
+    }
+
+    Drawer {
+        id: analysisDrawer
+        edge: Qt.RightEdge
+        width: 320
+        height: livePage.height
+
+        AnalysisPanel {
+            anchors.fill: parent
+            plotView: spectrumView
         }
     }
 

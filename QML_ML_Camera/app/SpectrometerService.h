@@ -8,6 +8,7 @@
 
 #include "Spectrum.h"
 
+class PeakListModel;
 class SensorDevice;
 
 // Single C++ owner of the spectrometer pipeline, mirroring CameraService:
@@ -31,6 +32,12 @@ class SpectrometerService : public QObject
     Q_PROPERTY(bool hold READ hold WRITE setHold NOTIFY holdChanged)
     Q_PROPERTY(bool hasDark READ hasDark NOTIFY calibrationChanged)
     Q_PROPERTY(bool hasReference READ hasReference NOTIFY calibrationChanged)
+    Q_PROPERTY(int smoothingWindow READ smoothingWindow WRITE setSmoothingWindow NOTIFY smoothingWindowChanged)
+    Q_PROPERTY(double integrationFromNm READ integrationFromNm NOTIFY integrationRegionChanged)
+    Q_PROPERTY(double integrationToNm READ integrationToNm NOTIFY integrationRegionChanged)
+    Q_PROPERTY(bool hasIntegrationRegion READ hasIntegrationRegion NOTIFY integrationRegionChanged)
+    Q_PROPERTY(double integralValue READ integralValue NOTIFY spectrumUpdated)
+    Q_PROPERTY(QObject* peakModel READ peakModel CONSTANT)
 
 public:
     explicit SpectrometerService(QObject* parent = nullptr);
@@ -59,6 +66,19 @@ public:
     bool hasDark() const { return m_dark.isValid(); }
     bool hasReference() const { return m_reference.isValid(); }
 
+    // Savitzky-Golay smoothing of the display spectrum: 0 = off, else an odd
+    // window 5-25 (the setter normalizes).
+    int smoothingWindow() const { return m_smoothingWindow; }
+    void setSmoothingWindow(int window);
+
+    double integrationFromNm() const { return m_integrationFromNm; }
+    double integrationToNm() const { return m_integrationToNm; }
+    bool hasIntegrationRegion() const;
+    double integralValue() const { return m_integralValue; }
+    QObject* peakModel() const;
+    double peakProminence() const { return m_peakProminence; }
+    void setPeakProminence(double prominence) { m_peakProminence = prominence; }
+
     Q_INVOKABLE void refreshDevices();
     Q_INVOKABLE void selectNextDevice();
     Q_INVOKABLE bool connectDevice();
@@ -67,6 +87,9 @@ public:
     Q_INVOKABLE void stopAcquisition();
     Q_INVOKABLE void captureDark();
     Q_INVOKABLE void captureReference();
+    Q_INVOKABLE void setIntegrationRegion(double fromNm, double toNm);
+    Q_INVOKABLE void clearIntegrationRegion();
+    Q_INVOKABLE void saveCapture(const QString& name, const QString& tags);
 
     // Thread-safe copy of the latest spectrum, for readers on other threads
     // (the video-overlay processor in Milestone 8).
@@ -88,6 +111,8 @@ signals:
     void modeChanged();
     void holdChanged();
     void calibrationChanged();
+    void smoothingWindowChanged();
+    void integrationRegionChanged();
     void spectrumUpdated();
     void errorOccurred(const QString& message);
 
@@ -100,6 +125,7 @@ private:
     void setAcquiring(bool acquiring);
     void resetCalibration();
     void rebuildDisplay();
+    void recomputeDerived();
     AcquisitionParams acquisitionParams() const;
 
     QList<SensorDevice*> m_devices;
@@ -110,6 +136,12 @@ private:
 
     int m_mode = 0;
     bool m_hold = false;
+    int m_smoothingWindow = 0;
+    double m_peakProminence = 0.0;  // 0 = auto (5% of display range)
+    double m_integrationFromNm = qQNaN();
+    double m_integrationToNm = qQNaN();
+    double m_integralValue = qQNaN();
+    PeakListModel* m_peakModel = nullptr;
     Spectrum m_dark;
     Spectrum m_reference;
     Spectrum m_display;
