@@ -1,0 +1,12 @@
+#ifndef SPECTROSIM_GLOBAL_H
+#define SPECTROSIM_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(SPECTROSIM_LIBRARY)
+#  define SPECTROSIM_EXPORT Q_DECL_EXPORT
+#else
+#  define SPECTROSIM_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // SPECTROSIM_GLOBAL_H

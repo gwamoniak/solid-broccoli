@@ -16,6 +16,7 @@ include(CTest)
 
 add_subdirectory(logger-core)
 add_subdirectory(spectro-core)
+add_subdirectory(spectro-sim)
 add_subdirectory(processor-api)
 add_subdirectory(camera-core)
 add_subdirectory(plugins/grayscale)

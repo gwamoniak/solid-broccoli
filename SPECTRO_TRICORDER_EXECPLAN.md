@@ -21,7 +21,7 @@ Everything is C++ and QML. No Rust, no new third-party libraries. QML stays a th
 - [x] (2026-07-03) Revision 2: device stack made sensor-neutral (`SensorTransport`, `SensorDevice` base, `SensorReading` variant, frame-type byte in the bridge contract); Geiger counter support added as Milestone 10; A-scan ultrasound recorded as a future extension; B-mode ultrasound declared out of scope; Android renumbered to Milestone 11.
 - [x] (2026-07-03 21:46) Milestone 1: Instrument design language — `Theme.qml` rethemed to the dark/yellow token set (all new instrument tokens added); tab-bar icons now tinted via `icon.color`; build + 6/6 tests + qmllint clean; app launches with a clean log (visual check on screen left to the maintainer). Included one out-of-scope-but-blocking fix, see Surprises.
 - [x] (2026-07-03 22:05) Milestone 2: `spectro-core` library built and tested — `Spectrum`/`GeigerReading`/`SensorReading` value types, `SpectroAnalysis` (Savitzky-Golay, prominence-based findPeaks, boundary-interpolated integrate, clamped transmittance/absorbance), `SensorDevice`/`SpectrometerDevice`, `SensorTransport`, `ProtocolCodec`, generic `CodecDevice`. Two new test executables (`tst_spectroanalysis`, `tst_codecdevice` with in-test fake transport/codec); suite now 8/8 green. One interface refinement recorded in the Decision Log (typed signals on the device base).
-- [ ] Milestone 3: `spectro-sim` library — spectrum synthesizer, instrument-noise model, simulated devices, scripted/replay transports, fault injection, ground-truth validation tests.
+- [x] (2026-07-03 22:24) Milestone 3: `spectro-sim` library built and validated — `SpectrumSynthesizer` (mercury/neon lamps, Planck blackbody, Gaussian absorber, Beer-Lambert), seeded `InstrumentModel` (QE bell, shot/read noise, dark current, hot pixels, saturation, averaging, plus a public `idealSignal()` so tests can compute exact residuals), `SimScene` + `SimulatedSpectrometer` (mercuryLamp/dyeSample named constructors, lamp/concentration controls for dark/ref capture), `ScriptedTransport` + `FaultPolicy`, `TraceRecorder`/`ReplayTransport`. `tst_spectrosim`: 12 sub-tests green — peak detection recovers 546.1 nm and ≥4/5 mercury lines; absorbance recovers 0.8 at 664 nm and halves with half concentration; identical seeds bit-identical; integration scales signal not read noise; saturation clips; averaging 4 ≈ 2× noise reduction; chunked/corrupted transport deterministic; trace record/replay round-trips. Suite 9/9 executables.
 - [ ] Milestone 4: `SpectrometerService` + device management UI — connect/disconnect/acquire from QML, Settings shows a SPECTROMETER section listing the simulated devices.
 - [ ] Milestone 5: Live tab — scene-graph `SpectrumView` item, axes/grid, live trace, readouts, zoom/pan, dark/reference/sample capture.
 - [ ] Milestone 6: Analysis — smoothing, absorbance/transmittance modes, peak markers, integration region, multi-trace overlays.
@@ -390,9 +390,16 @@ In `QML_ML_Camera/spectro-sim/` (all classes exported like `camera-core`'s):
         double fullWellCounts = 65535.0;      // 16-bit saturation
         double darkCurrentPerMs = 0.5;        // counts per ms integration
         double readNoiseSigma = 8.0;          // counts
-        QVector<int> hotPixels;               // indices forced near full well
+        QVector<int> hotPixels;               // indices forced to full well
+        double countsPerMsFullFlux = 400.0;   // scale: counts/ms at flux 1.0 (added in M3)
+        double qeFloor = 0.3;                 // quantum-efficiency bell (added in M3)
+        double qeCenterNm = 680.0;
+        double qeSigmaNm = 300.0;
     };
-    class InstrumentModel {  // Spectrum measure(flux, grid, params); deterministic per seed
+    class InstrumentModel {
+        // Spectrum measure(flux, grid, params) — deterministic per seed.
+        // QVector<double> idealSignal(flux, grid, params) — noise-free
+        // expectation, public so tests compute exact residuals (added in M3).
     };
 
     struct SimScene { /* source enum, optional absorber(center,fwhm,peakA,concentration), drift */ };

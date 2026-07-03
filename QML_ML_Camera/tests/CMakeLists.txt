@@ -25,6 +25,10 @@ add_camera_test(tst_spectroanalysis tst_spectroanalysis.cpp)
 target_link_libraries(tst_spectroanalysis PRIVATE spectro-core)
 add_camera_test(tst_codecdevice tst_codecdevice.cpp)
 target_link_libraries(tst_codecdevice PRIVATE spectro-core)
+
+# spectro-sim: analysis validated against simulator-injected ground truth.
+add_camera_test(tst_spectrosim tst_spectrosim.cpp)
+target_link_libraries(tst_spectrosim PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 
