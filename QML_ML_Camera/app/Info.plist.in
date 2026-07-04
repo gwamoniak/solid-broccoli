@@ -20,5 +20,7 @@
     <string>${PROJECT_VERSION}</string>
     <key>NSCameraUsageDescription</key>
     <string>This app uses the camera to show a live preview and capture pictures.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>This app scans for and connects to Bluetooth LE spectral sensor bridges.</string>
 </dict>
 </plist>

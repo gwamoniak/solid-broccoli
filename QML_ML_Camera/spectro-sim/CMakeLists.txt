@@ -7,6 +7,8 @@ qt_add_library(spectro-sim SHARED
     ScriptedTransport.cpp
     ScriptedTransport.h
     SimScene.h
+    SimulatedBridgeTransport.cpp
+    SimulatedBridgeTransport.h
     SimulatedSpectrometer.cpp
     SimulatedSpectrometer.h
     SpectrumSynthesizer.cpp

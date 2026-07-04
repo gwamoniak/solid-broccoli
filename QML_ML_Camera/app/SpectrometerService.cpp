@@ -1,13 +1,22 @@
 #include "SpectrometerService.h"
 
 #include <algorithm>
+#include <memory>
 
+#include <QBluetoothDeviceDiscoveryAgent>
+#include <QBluetoothDeviceInfo>
+#include <QBluetoothUuid>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QRegularExpression>
 #include <QUrl>
 
+#include "As7265xCodec.h"
+#include "BleTransport.h"
+#include "BridgeContract.h"
+#include "CodecDevice.h"
 #include "PeakListModel.h"
+#include "SimulatedBridgeTransport.h"
 #include "SensorDevice.h"
 #include "SessionModel.h"
 #include "SessionSpectrumModel.h"
@@ -22,7 +31,11 @@ SpectrometerService::SpectrometerService(QObject* parent)
     : QObject(parent)
     , m_peakModel(new PeakListModel(this))
 {
-    refreshDevices();
+    // Construction creates the built-ins only; the BLE scan (radio power,
+    // 5 s, permission prompt on first use) runs solely on an explicit
+    // refreshDevices() — never in headless tests, which construct this
+    // service directly.
+    ensureBuiltInDevices();
     qDebug(logInfo()) << "SpectrometerService:" << m_devices.size()
                       << "device(s) available.";
 }
@@ -425,13 +438,70 @@ AcquisitionParams SpectrometerService::acquisitionParams() const
 
 void SpectrometerService::refreshDevices()
 {
-    // Built-in simulated instruments, created once. Milestone 9 appends BLE
-    // scan results after these entries.
-    if (m_devices.isEmpty()) {
-        attachDevice(SimulatedSpectrometer::mercuryLamp(this));
-        attachDevice(SimulatedSpectrometer::dyeSample(this));
-        emit availableDevicesChanged();
+    ensureBuiltInDevices();
+    startBleScan();
+}
+
+void SpectrometerService::ensureBuiltInDevices()
+{
+    if (!m_devices.isEmpty())
+        return;
+    attachDevice(SimulatedSpectrometer::mercuryLamp(this));
+    attachDevice(SimulatedSpectrometer::dyeSample(this));
+    // The full byte path with no radio: bridge impersonation -> chunked
+    // "notifications" -> codec -> CodecDevice.
+    attachDevice(new CodecDevice(
+        QStringLiteral("Simulated AS7265x bridge (loopback)"),
+        std::unique_ptr<SensorTransport>(SimulatedBridgeTransport::mercuryLamp()),
+        std::make_unique<As7265xCodec>(), this));
+    emit availableDevicesChanged();
+}
+
+void SpectrometerService::startBleScan()
+{
+    if (!m_discoveryAgent) {
+        m_discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
+        m_discoveryAgent->setLowEnergyDiscoveryTimeout(5000);
+        connect(m_discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+                this, &SpectrometerService::onBleDeviceDiscovered);
+        connect(m_discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished,
+                this, [this]() {
+                    qDebug(logInfo()) << "SpectrometerService: BLE scan finished,"
+                                      << m_bleDeviceKeys.size() << "bridge(s) known.";
+                });
+        connect(m_discoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
+                this, [this](QBluetoothDeviceDiscoveryAgent::Error) {
+                    qWarning(logCritical()) << "SpectrometerService: BLE scan error:"
+                                            << m_discoveryAgent->errorString();
+                    emit errorOccurred(m_discoveryAgent->errorString());
+                });
     }
+    if (m_discoveryAgent->isActive())
+        return;
+    qDebug(logInfo()) << "SpectrometerService: scanning for BLE bridges (5 s).";
+    m_discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
+}
+
+void SpectrometerService::onBleDeviceDiscovered(const QBluetoothDeviceInfo& info)
+{
+    if (!info.serviceUuids().contains(QBluetoothUuid(BridgeContract::serviceUuid())))
+        return;
+
+    // macOS hides the MAC address; the platform device UUID identifies then.
+    const QString key = info.address().isNull() ? info.deviceUuid().toString()
+                                                : info.address().toString();
+    if (m_bleDeviceKeys.contains(key))
+        return;
+    m_bleDeviceKeys.append(key);
+
+    const QString label = (info.name().isEmpty()
+                               ? QStringLiteral("Spectral bridge")
+                               : info.name())
+                          + QStringLiteral(" (BLE)");
+    attachDevice(new CodecDevice(label, std::make_unique<BleTransport>(info),
+                                 std::make_unique<As7265xCodec>(), this));
+    qDebug(logInfo()) << "SpectrometerService: BLE bridge found:" << label;
+    emit availableDevicesChanged();
 }
 
 void SpectrometerService::selectNextDevice()

@@ -9,6 +9,8 @@
 #include "Spectrum.h"
 
 class PeakListModel;
+class QBluetoothDeviceDiscoveryAgent;
+class QBluetoothDeviceInfo;
 class SensorDevice;
 class SessionModel;
 class SessionSpectrumModel;
@@ -135,6 +137,9 @@ private:
     enum class PendingCapture { None, Dark, Reference };
 
     SensorDevice* currentDevice() const;
+    void ensureBuiltInDevices();
+    void startBleScan();
+    void onBleDeviceDiscovered(const QBluetoothDeviceInfo& info);
     void attachDevice(SensorDevice* device);
     void onSpectrum(SensorDevice* device, const Spectrum& spectrum);
     void setAcquiring(bool acquiring);
@@ -144,6 +149,8 @@ private:
     AcquisitionParams acquisitionParams() const;
 
     QList<SensorDevice*> m_devices;
+    QBluetoothDeviceDiscoveryAgent* m_discoveryAgent = nullptr;
+    QStringList m_bleDeviceKeys;  // address/uuid of already-listed bridges
     int m_currentDeviceIndex = 0;
     bool m_acquiring = false;
     int m_integrationTimeMs = 100;

@@ -1,4 +1,9 @@
 qt_add_library(spectro-core SHARED
+    As7265xCodec.cpp
+    As7265xCodec.h
+    BleTransport.cpp
+    BleTransport.h
+    BridgeContract.h
     CodecDevice.cpp
     CodecDevice.h
     ProtocolCodec.h
@@ -17,6 +22,7 @@ qt_add_library(spectro-core SHARED
 target_link_libraries(spectro-core
     PUBLIC
         Qt6::Core
+        Qt6::Bluetooth
         logger-core
 )
 

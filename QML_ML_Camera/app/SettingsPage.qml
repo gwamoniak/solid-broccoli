@@ -86,6 +86,50 @@ NavPage {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
+                    // BLE bridge scan: appends discovered devices to the picker.
+                    Item {
+                        width: parent.width
+                        height: 50
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Bluetooth bridges")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                id: refreshButton
+                                text: qsTr("Refresh")
+                                onClicked: SpectrometerService.refreshDevices()
+                                background: Rectangle {
+                                    radius: Theme.radiusControl
+                                    color: refreshButton.down ? Theme.accentPressed : Theme.fill
+                                }
+                                contentItem: Text {
+                                    text: refreshButton.text
+                                    font.pointSize: Theme.subhead
+                                    color: Theme.label
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 12
+                                    rightPadding: 12
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
                     // Connect / Disconnect
                     Item {
                         width: parent.width

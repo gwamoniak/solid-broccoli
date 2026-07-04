@@ -66,4 +66,4 @@ Feature work in this repo uses "ExecPlan" design documents defined by `PLANS.md`
 
 ## Logging
 
-Logs are written to `logs/SolidBroccoli_Log_<date>.csv` relative to the working directory. Use `logInfo()`, `logWarning()`, `logCritical()` (from `loggingcategories.h`) with `qDebug()`/`qWarning()` — do not use plain `qDebug()` without a category.
+Logs are written to `<AppDataLocation>/logs/SolidBroccoli_Log_<date>.csv` via `StorageLocations::logsDir()` — on macOS that is `~/Library/Application Support/SolidBroccoli/SolidBroccoli/logs/`. Use `logInfo()`, `logWarning()`, `logCritical()` (from `loggingcategories.h`) with `qDebug()`/`qWarning()` — do not use plain `qDebug()` without a category.

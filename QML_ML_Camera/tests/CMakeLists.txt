@@ -46,6 +46,10 @@ target_link_libraries(tst_sessiondao PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_spectrumexporter tst_spectrumexporter.cpp)
 target_link_libraries(tst_spectrumexporter PRIVATE spectro-core spectro-sim)
 
+# Bridge contract codec + simulated bridge byte path (Milestone 9).
+add_camera_test(tst_as7265xcodec tst_as7265xcodec.cpp)
+target_link_libraries(tst_as7265xcodec PRIVATE spectro-core spectro-sim)
+
 # Video overlay processor (Milestone 8); compiled in like tst_pluginmanager.
 add_camera_test(tst_spectrumoverlay
     tst_spectrumoverlay.cpp
