@@ -64,6 +64,22 @@ QVariantList SessionSpectrumModel::sessionVideos(int sessionId) const
     return list;
 }
 
+QVariantList SessionSpectrumModel::sessionMeasurements(int sessionId) const
+{
+    QVariantList list;
+    for (const MeasurementRecord& m : m_sqlDB.m_measurementDao.measurements(sessionId)) {
+        list.append(QVariantMap{
+            {QStringLiteral("id"), m.id},
+            {QStringLiteral("type"), m.type},
+            {QStringLiteral("value"), m.value},
+            {QStringLiteral("unit"), m.unit},
+            {QStringLiteral("createdUtc"), m.createdUtc},
+            {QStringLiteral("summary"), m.summary},
+        });
+    }
+    return list;
+}
+
 SpectrumEntry SessionSpectrumModel::entryById(int id) const
 {
     return m_sqlDB.m_spectrumDao.spectrumById(id);

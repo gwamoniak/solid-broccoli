@@ -4,7 +4,13 @@ qt_add_library(spectro-core SHARED
     BleTransport.cpp
     BleTransport.h
     BridgeContract.h
+    BridgeFrameParser.cpp
+    BridgeFrameParser.h
     CodecDevice.cpp
+    GeigerCodec.cpp
+    GeigerCodec.h
+    GeigerMath.cpp
+    GeigerMath.h
     CodecDevice.h
     ProtocolCodec.h
     SensorDevice.cpp

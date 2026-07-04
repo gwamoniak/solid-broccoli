@@ -17,7 +17,20 @@ class SpectrumOverlayProcessor : public FrameProcessor
 public:
     using SnapshotGetter = std::function<Spectrum()>;
 
+    // Radiation readout burned in alongside the spectrum whenever the
+    // Geiger service is acquiring (Milestone 10). Mirrors the snapshot
+    // pattern: the provider returns a mutex-guarded copy.
+    struct GeigerStatus {
+        bool active = false;
+        bool alert = false;
+        double doseMicroSvPerHour = 0.0;
+        double countsPerMinute = 0.0;
+    };
+    using GeigerGetter = std::function<GeigerStatus()>;
+
     explicit SpectrumOverlayProcessor(SnapshotGetter snapshot);
+
+    void setGeigerStatusProvider(GeigerGetter getter);
 
     QString name() const override;
     QString description() const override;
@@ -26,6 +39,7 @@ public:
 
 private:
     SnapshotGetter m_snapshot;
+    GeigerGetter m_geigerStatus;
 };
 
 #endif // SPECTRUMOVERLAYPROCESSOR_H

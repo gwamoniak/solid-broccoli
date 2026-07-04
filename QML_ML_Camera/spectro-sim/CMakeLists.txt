@@ -9,6 +9,8 @@ qt_add_library(spectro-sim SHARED
     SimScene.h
     SimulatedBridgeTransport.cpp
     SimulatedBridgeTransport.h
+    SimulatedGeiger.cpp
+    SimulatedGeiger.h
     SimulatedSpectrometer.cpp
     SimulatedSpectrometer.h
     SpectrumSynthesizer.cpp

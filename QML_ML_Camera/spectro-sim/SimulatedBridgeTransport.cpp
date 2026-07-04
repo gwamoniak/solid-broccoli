@@ -33,6 +33,22 @@ SimulatedBridgeTransport* SimulatedBridgeTransport::mercuryLamp(QObject* parent)
     return new SimulatedBridgeTransport(scene, {}, parent);
 }
 
+SimulatedBridgeTransport* SimulatedBridgeTransport::geigerSource(double meanCps,
+                                                                 QObject* parent)
+{
+    auto* transport = new SimulatedBridgeTransport(SimScene{}, {}, parent);
+    transport->enableGeigerMode(meanCps);
+    transport->setFrameIntervalMs(500);  // 2 Hz, matching SimulatedGeiger
+    return transport;
+}
+
+void SimulatedBridgeTransport::enableGeigerMode(double meanCps)
+{
+    m_geigerMode = true;
+    m_geigerMeanCps = meanCps;
+    m_geigerRng.seed(m_model.profile().seed);
+}
+
 bool SimulatedBridgeTransport::open(QString* errorMessage)
 {
     Q_UNUSED(errorMessage)
@@ -137,6 +153,26 @@ void SimulatedBridgeTransport::rebuildFlux()
 
 QByteArray SimulatedBridgeTransport::buildFrame(quint32 timestampMs)
 {
+    if (m_geigerMode) {
+        // Poisson event count over the frame interval, reported as CPS.
+        const double meanCounts = m_geigerMeanCps * m_frameIntervalMs / 1000.0;
+        int counts = 0;
+        if (meanCounts > 0.0) {
+            std::poisson_distribution<int> distribution(meanCounts);
+            counts = distribution(m_geigerRng);
+        }
+        const float cps = float(counts * 1000.0 / m_frameIntervalMs);
+
+        QByteArray frame;
+        QDataStream out(&frame, QIODevice::WriteOnly);
+        out.setByteOrder(QDataStream::LittleEndian);
+        out.setFloatingPointPrecision(QDataStream::SinglePrecision);
+        out << quint32(0) << BridgeContract::magic << BridgeContract::version
+            << BridgeContract::frameGeiger << timestampMs << cps;
+        qToLittleEndian(quint32(frame.size() - 4), frame.data());
+        return frame;
+    }
+
     // Drift is a function of the frame timestamp (not wall time), so a
     // sequence produced by emitFrames() is fully deterministic.
     double drift = 1.0;

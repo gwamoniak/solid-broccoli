@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QVector>
 
+#include "BridgeFrameParser.h"
 #include "ProtocolCodec.h"
 #include "spectro-core_global.h"
 
@@ -28,10 +29,9 @@ public:
 private:
     void parseSpectrumPayload(const uchar* payload, int size);
 
-    QByteArray m_buffer;
+    BridgeFrameParser m_parser{QStringLiteral("As7265xCodec")};
     std::function<void(SensorReading)> m_sink;
     AcquisitionParams m_lastParams;  // stamped onto emitted spectra
-    qint64 m_skippedBytes = 0;
 };
 
 #endif // AS7265XCODEC_H

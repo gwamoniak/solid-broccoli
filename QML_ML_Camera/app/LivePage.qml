@@ -100,6 +100,92 @@ NavPage {
             }
         }
 
+        // ── RADIATION card (visible while a Geiger device is connected) ──
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 72
+            color: Theme.surface
+            visible: GeigerService.connected
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (owningStack)
+                        owningStack.push("qrc:/GeigerPage.qml", { owningStack: owningStack })
+                }
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: Theme.screenMargin
+                anchors.rightMargin: Theme.screenMargin
+                spacing: 24
+
+                Column {
+                    spacing: 2
+                    Label {
+                        text: qsTr("RADIATION")
+                        font.pointSize: Theme.caption
+                        font.letterSpacing: Theme.microLabelSpacing
+                        color: Theme.secondaryLabel
+                    }
+                    Label {
+                        text: GeigerService.doseMicroSvPerHour.toFixed(2) + " µSv/h"
+                        font.family: Theme.readoutFontName
+                        font.pointSize: Theme.title
+                        color: GeigerService.aboveThreshold ? Theme.destructive : Theme.accent
+                    }
+                }
+                Column {
+                    spacing: 2
+                    Label {
+                        text: qsTr("CPM")
+                        font.pointSize: Theme.caption
+                        font.letterSpacing: Theme.microLabelSpacing
+                        color: Theme.secondaryLabel
+                    }
+                    Label {
+                        text: GeigerService.countsPerMinute.toFixed(0)
+                        font.family: Theme.readoutFontName
+                        font.pointSize: Theme.callout
+                        color: Theme.label
+                    }
+                }
+
+                Rectangle {
+                    width: 8
+                    height: 8
+                    radius: 4
+                    color: Theme.live
+                    visible: GeigerService.acquiring
+                }
+
+                Item { Layout.fillWidth: true }
+
+                StripChartView {
+                    source: GeigerService
+                    compact: true
+                    windowSeconds: 60
+                    traceColor: GeigerService.aboveThreshold ? Theme.destructive : Theme.accent
+                    Layout.preferredWidth: 140
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                Label {
+                    text: ">"
+                    font.pointSize: Theme.body
+                    color: Theme.secondaryLabel
+                }
+            }
+
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: Theme.hairline
+                color: Theme.separator
+            }
+        }
+
         // ── Plot + docked analysis panel (tablet layout at ≥ 900 px) ──
         RowLayout {
             Layout.fillWidth: true

@@ -1,8 +1,12 @@
 #ifndef BRIDGECONTRACT_H
 #define BRIDGECONTRACT_H
 
+#include <QByteArray>
 #include <QUuid>
+#include <QtEndian>
 #include <QtGlobal>
+
+#include "Spectrum.h"
 
 // The wire contract between this app and the ESP32 sensor bridge firmware
 // (the firmware itself is out of scope — SimulatedBridgeTransport in
@@ -47,6 +51,26 @@ constexpr quint8 cmdSetParams = 0x03;
 // Upper bound a decoder accepts for the length field; anything larger is
 // treated as corruption during resynchronization.
 constexpr int maxFrameLength = 2048;
+
+// Control-command encoders, shared by every codec on this link — the command
+// set is a property of the bridge, not of a sensor modality.
+inline QByteArray encodeStartCommand()
+{
+    return QByteArray(1, char(cmdStart));
+}
+inline QByteArray encodeStopCommand()
+{
+    return QByteArray(1, char(cmdStop));
+}
+inline QByteArray encodeParamsCommand(const AcquisitionParams& params)
+{
+    QByteArray out(4, Qt::Uninitialized);
+    out[0] = char(cmdSetParams);
+    qToLittleEndian<quint16>(quint16(qBound(0, params.integrationTimeMs, 65535)),
+                             out.data() + 1);
+    out[3] = char(quint8(qBound(1, params.averaging, 255)));
+    return out;
+}
 
 } // namespace BridgeContract
 

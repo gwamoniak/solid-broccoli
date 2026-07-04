@@ -30,6 +30,7 @@ public:
     Q_INVOKABLE int sessionId() const { return m_sessionId; }
     Q_INVOKABLE void rename(int row, const QString& name);
     Q_INVOKABLE QVariantList sessionVideos(int sessionId) const;
+    Q_INVOKABLE QVariantList sessionMeasurements(int sessionId) const;
     Q_INVOKABLE bool removeRows(int row, int count,
                                 const QModelIndex& parent = QModelIndex()) override;
 

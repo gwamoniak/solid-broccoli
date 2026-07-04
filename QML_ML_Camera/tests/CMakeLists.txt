@@ -50,6 +50,16 @@ target_link_libraries(tst_spectrumexporter PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_as7265xcodec tst_as7265xcodec.cpp)
 target_link_libraries(tst_as7265xcodec PRIVATE spectro-core spectro-sim)
 
+# Geiger modality (Milestone 10): Poisson ground truth, rolling CPM/dose,
+# codec dispatch, bridge byte path, MeasurementDAO, and the service
+# (compiled in like tst_spectrometerservice).
+add_camera_test(tst_geiger
+    tst_geiger.cpp
+    ${CMAKE_SOURCE_DIR}/app/GeigerService.cpp
+)
+target_include_directories(tst_geiger PRIVATE ${CMAKE_SOURCE_DIR}/app)
+target_link_libraries(tst_geiger PRIVATE spectro-core spectro-sim)
+
 # Video overlay processor (Milestone 8); compiled in like tst_pluginmanager.
 add_camera_test(tst_spectrumoverlay
     tst_spectrumoverlay.cpp

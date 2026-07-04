@@ -9,8 +9,12 @@ qt_add_executable(QML_ML_Camera_App
     CaptureCoordinator.h
     FrameProcessingWorker.cpp
     FrameProcessingWorker.h
+    GeigerService.cpp
+    GeigerService.h
     PluginManager.cpp
     PluginManager.h
+    StripChartView.cpp
+    StripChartView.h
     PictureProvider.cpp
     PictureProvider.h
     PeakListModel.cpp
@@ -30,6 +34,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
         AlbumPage.qml
         AnalysisPanel.qml
         CameraPage.qml
+        GeigerPage.qml
         InputDialog.qml
         LivePage.qml
         LoggerPage.qml

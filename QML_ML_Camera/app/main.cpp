@@ -15,9 +15,11 @@
 #include "LoggerModel.h"
 #include "PictureProvider.h"
 #include "CameraService.h"
+#include "GeigerService.h"
 #include "SpectrometerService.h"
 #include "SpectrumOverlayProcessor.h"
 #include "SpectrumView.h"
+#include "StripChartView.h"
 #include "CaptureCoordinator.h"
 #include "PluginManager.h"
 #include "AppSettings.h"
@@ -64,8 +66,33 @@ int main(int argc, char *argv[])
     AppSettings appSettings;
     SpectrometerService spectrometerService;
     spectrometerService.setSessionStore(&sessionModel, &sessionSpectrumModel);
+
+    GeigerService geigerService;
+    // Measurements land in the same lab-notebook session as spectral
+    // captures; the provider creates the session on first save.
+    geigerService.setMeasurementStore(
+        &db.m_measurementDao,
+        [&spectrometerService]() { return spectrometerService.ensureActiveSession(); });
+    // Tube factor and alert threshold persist across restarts.
+    geigerService.setTubeFactor(appSettings.geigerTubeFactor());
+    geigerService.setAlertThreshold(appSettings.geigerAlertThreshold());
+    QObject::connect(&geigerService, &GeigerService::tubeFactorChanged,
+                     &appSettings, [&]() {
+                         appSettings.setGeigerTubeFactor(geigerService.tubeFactor());
+                     });
+    QObject::connect(&geigerService, &GeigerService::alertThresholdChanged,
+                     &appSettings, [&]() {
+                         appSettings.setGeigerAlertThreshold(geigerService.alertThreshold());
+                     });
+
     SpectrumOverlayProcessor overlayProcessor(
         [&spectrometerService]() { return spectrometerService.latestSpectrumSnapshot(); });
+    overlayProcessor.setGeigerStatusProvider([&geigerService]() {
+        const GeigerService::OverlayStatus s = geigerService.overlayStatus();
+        return SpectrumOverlayProcessor::GeigerStatus{s.active, s.alert,
+                                                      s.doseMicroSvPerHour,
+                                                      s.countsPerMinute};
+    });
 
     CameraService cameraService;
 
@@ -110,7 +137,9 @@ int main(int argc, char *argv[])
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
                                  &spectrometerService);
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "GeigerService", &geigerService);
     qmlRegisterType<SpectrumView>("solid.broccoli", 1, 0, "SpectrumView");
+    qmlRegisterType<StripChartView>("solid.broccoli", 1, 0, "StripChartView");
 
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
     context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());

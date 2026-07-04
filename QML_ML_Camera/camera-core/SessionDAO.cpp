@@ -96,6 +96,12 @@ void SessionDAO::removeSession(int id) const
     videoCascade.exec();
     DatabaseManager::debugQuery(videoCascade);
 
+    QSqlQuery measurementCascade(m_sqlDB);
+    measurementCascade.prepare("DELETE FROM measurements WHERE session_id = (:id)");
+    measurementCascade.bindValue(":id", id);
+    measurementCascade.exec();
+    DatabaseManager::debugQuery(measurementCascade);
+
     QSqlQuery query(m_sqlDB);
     query.prepare("DELETE FROM sessions WHERE id = (:id)");
     query.bindValue(":id", id);

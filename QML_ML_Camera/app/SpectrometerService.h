@@ -103,6 +103,10 @@ public:
     // where saveCapture degrades to an error signal).
     void setSessionStore(SessionModel* sessions, SessionSpectrumModel* spectra);
     int activeSessionId() const { return m_activeSessionId; }
+    // Returns the active session id, creating a session first if none is
+    // active (-1 without a session store). Shared with GeigerService so
+    // measurements land in the same lab-notebook session as captures.
+    int ensureActiveSession();
     QVariantList overlayIds() const;
     QVector<Spectrum> overlaySpectra() const;
 

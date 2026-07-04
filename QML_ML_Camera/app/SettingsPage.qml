@@ -268,6 +268,196 @@ NavPage {
                 }
             }
 
+            // ── GEIGER section ──
+            Label {
+                text: qsTr("GEIGER")
+                font.pointSize: Theme.caption
+                color: Theme.secondaryLabel
+                Layout.leftMargin: 12
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                radius: Theme.radiusControl
+                color: Theme.surface
+                implicitHeight: geigerCol.implicitHeight
+
+                Column {
+                    id: geigerCol
+                    width: parent.width
+
+                    // Device picker: tap cycles through the available devices.
+                    Item {
+                        width: parent.width
+                        height: 50
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: GeigerService.selectNextDevice()
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Device")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Item { Layout.fillWidth: true }
+                            Label {
+                                text: GeigerService.availableDevices.length > 0
+                                      ? GeigerService.availableDevices[GeigerService.currentDeviceIndex]
+                                      : qsTr("None")
+                                font.pointSize: Theme.subhead
+                                color: Theme.secondaryLabel
+                                elide: Text.ElideRight
+                                Layout.maximumWidth: parent.width * 0.6
+                            }
+                            Label {
+                                text: ">"
+                                font.pointSize: Theme.body
+                                color: Theme.secondaryLabel
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Connect / Disconnect
+                    Item {
+                        width: parent.width
+                        height: 50
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Connection")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                id: geigerConnectButton
+                                text: GeigerService.connected ? qsTr("Disconnect") : qsTr("Connect")
+                                onClicked: GeigerService.connected
+                                           ? GeigerService.disconnectDevice()
+                                           : GeigerService.connectDevice()
+                                background: Rectangle {
+                                    radius: Theme.radiusControl
+                                    color: GeigerService.connected
+                                           ? Theme.fill
+                                           : (geigerConnectButton.down ? Theme.accentPressed : Theme.accent)
+                                }
+                                contentItem: Text {
+                                    text: geigerConnectButton.text
+                                    font.pointSize: Theme.subhead
+                                    color: GeigerService.connected ? Theme.label : Theme.textOverAccent
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 12
+                                    rightPadding: 12
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Tube conversion factor (µSv/h per CPM)
+                    Item {
+                        width: parent.width
+                        height: 58
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+
+                            Label {
+                                text: qsTr("Tube factor")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Slider {
+                                Layout.fillWidth: true
+                                from: 0.001
+                                to: 0.02
+                                stepSize: 0.0001
+                                value: GeigerService.tubeFactor
+                                onMoved: GeigerService.tubeFactor = value
+                            }
+                            Label {
+                                text: GeigerService.tubeFactor.toFixed(4)
+                                font.family: Theme.readoutFontName
+                                font.pointSize: Theme.subhead
+                                color: Theme.label
+                                horizontalAlignment: Text.AlignRight
+                                Layout.preferredWidth: 64
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Alert threshold (µSv/h)
+                    Item {
+                        width: parent.width
+                        height: 58
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+
+                            Label {
+                                text: qsTr("Alert level")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Slider {
+                                Layout.fillWidth: true
+                                from: 0.1
+                                to: 5.0
+                                stepSize: 0.05
+                                value: GeigerService.alertThreshold
+                                onMoved: GeigerService.alertThreshold = value
+                            }
+                            Label {
+                                text: GeigerService.alertThreshold.toFixed(2) + " µSv/h"
+                                font.family: Theme.readoutFontName
+                                font.pointSize: Theme.subhead
+                                color: Theme.label
+                                horizontalAlignment: Text.AlignRight
+                                Layout.preferredWidth: 88
+                            }
+                        }
+                    }
+                }
+            }
+
             // ── CAMERA section ──
             Label {
                 text: qsTr("CAMERA")

@@ -55,4 +55,13 @@ public:
     using SensorDevice::SensorDevice;
 };
 
+// Semantic specialization for radiation counters (emits readingReady).
+class SPECTROCORE_EXPORT GeigerDevice : public SensorDevice
+{
+    Q_OBJECT
+
+public:
+    using SensorDevice::SensorDevice;
+};
+
 #endif // SENSORDEVICE_H

@@ -11,6 +11,7 @@
 #include "PictureDAO.h"
 #include "LoggerDAO.h"
 #include "MovieDAO.h"
+#include "MeasurementDAO.h"
 #include "SessionDAO.h"
 #include "SpectrumDAO.h"
 
@@ -48,6 +49,7 @@ public:
     const MovieDAO m_movieDao;
     const SessionDAO m_sessionDao;
     const SpectrumDAO m_spectrumDao;
+    const MeasurementDAO m_measurementDao;
 };
 
 #endif // DATABASEMANAGER_H

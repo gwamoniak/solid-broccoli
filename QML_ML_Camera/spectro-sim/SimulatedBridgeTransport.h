@@ -31,6 +31,13 @@ public:
 
     // The scene the app's loopback device shows: the mercury lamp.
     static SimulatedBridgeTransport* mercuryLamp(QObject* parent = nullptr);
+    // Geiger-mode loopback: type-0x02 frames from a Poisson draw at meanCps.
+    static SimulatedBridgeTransport* geigerSource(double meanCps,
+                                                  QObject* parent = nullptr);
+
+    // Switches outgoing frames to geiger type 0x02 (Milestone 10). The same
+    // framing, chunking, and fault policy apply — that is the point.
+    void enableGeigerMode(double meanCps);
 
     bool open(QString* errorMessage) override;
     void close() override;
@@ -70,6 +77,9 @@ private:
     int m_frameIntervalMs = 200;
     int m_framesEmitted = 0;
     quint32 m_syntheticClockMs = 0;  // emitFrames() timestamps
+    bool m_geigerMode = false;
+    double m_geigerMeanCps = 5.0;
+    std::mt19937 m_geigerRng{1};
     FaultPolicy m_faults;
     std::mt19937 m_faultRng{1};
 };

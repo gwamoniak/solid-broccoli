@@ -242,6 +242,22 @@ void SpectrometerService::setSessionStore(SessionModel* sessions,
     m_spectrumModel = spectra;
 }
 
+int SpectrometerService::ensureActiveSession()
+{
+    if (!m_sessionModel)
+        return -1;
+    if (m_activeSessionId < 0) {
+        const QString sessionName = QStringLiteral("Session ")
+            + QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"));
+        m_activeSessionId = m_sessionModel->addSessionFromName(sessionName);
+        m_darkStored = false;
+        m_referenceStored = false;
+        m_sessionModel->refresh();
+        qDebug(logInfo()) << "SpectrometerService: session created:" << sessionName;
+    }
+    return m_activeSessionId;
+}
+
 void SpectrometerService::saveCapture(const QString& name, const QString& tags)
 {
     if (!m_sessionModel || !m_spectrumModel) {
@@ -253,14 +269,7 @@ void SpectrometerService::saveCapture(const QString& name, const QString& tags)
         return;
     }
 
-    if (m_activeSessionId < 0) {
-        const QString sessionName = QStringLiteral("Session ")
-            + QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"));
-        m_activeSessionId = m_sessionModel->addSessionFromName(sessionName);
-        m_darkStored = false;
-        m_referenceStored = false;
-        qDebug(logInfo()) << "SpectrometerService: session created:" << sessionName;
-    }
+    ensureActiveSession();
 
     // The calibration pair belongs with the data it corrects; store each
     // once per session.

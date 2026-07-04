@@ -11,6 +11,11 @@ SpectrumOverlayProcessor::SpectrumOverlayProcessor(SnapshotGetter snapshot)
 {
 }
 
+void SpectrumOverlayProcessor::setGeigerStatusProvider(GeigerGetter getter)
+{
+    m_geigerStatus = std::move(getter);
+}
+
 QString SpectrumOverlayProcessor::name() const
 {
     return QStringLiteral("Spectrum overlay");
@@ -29,8 +34,37 @@ bool SpectrumOverlayProcessor::initialize(QString*)
 QImage SpectrumOverlayProcessor::process(const QImage& frame)
 {
     const Spectrum spectrum = m_snapshot ? m_snapshot() : Spectrum();
-    if (!spectrum.isValid() || frame.isNull())
+    const GeigerStatus geiger = m_geigerStatus ? m_geigerStatus() : GeigerStatus();
+    if (frame.isNull())
         return frame;
+
+    // Radiation-only overlay: a compact dose chip when the Geiger counter
+    // is running but no spectrum is streaming.
+    if (!spectrum.isValid()) {
+        if (!geiger.active)
+            return frame;
+        QImage out = frame;
+        QPainter painter(&out);
+        painter.setRenderHint(QPainter::Antialiasing);
+        const int fontPx = std::max(12, out.height() / 24);
+        QFont font = painter.font();
+        font.setPixelSize(fontPx);
+        painter.setFont(font);
+        const QString text = QStringLiteral("%1 µSv/h · %2 CPM")
+                                 .arg(geiger.doseMicroSvPerHour, 0, 'f', 2)
+                                 .arg(geiger.countsPerMinute, 0, 'f', 0);
+        const int margin = out.width() / 60 + 4;
+        const int textWidth = painter.fontMetrics().horizontalAdvance(text);
+        const QRect chip(margin, out.height() - margin - fontPx * 2,
+                         textWidth + fontPx * 2, fontPx * 2);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(10, 10, 12, 170));
+        painter.drawRoundedRect(chip, 8, 8);
+        painter.setPen(geiger.alert ? QColor(0xFF, 0x45, 0x3A)
+                                    : QColor(0xFF, 0xE1, 0x00));
+        painter.drawText(chip, Qt::AlignCenter, text);
+        return out;
+    }
 
     QImage out = frame;  // detaches on paint
     QPainter painter(&out);
@@ -78,9 +112,23 @@ QImage SpectrumOverlayProcessor::process(const QImage& frame)
 
     // Readouts: peak wavelength (yellow), wavelength range, timestamp.
     painter.setPen(QColor(0xFF, 0xE1, 0x00));
-    painter.drawText(QPoint(plot.left(), panel.top() + fontPx + 4),
-                     QStringLiteral("λ peak %1 nm")
-                         .arg(spectrum.wavelengthsNm[peakIndex], 0, 'f', 1));
+    QString headline = QStringLiteral("λ peak %1 nm")
+                           .arg(spectrum.wavelengthsNm[peakIndex], 0, 'f', 1);
+    painter.drawText(QPoint(plot.left(), panel.top() + fontPx + 4), headline);
+    if (geiger.active) {
+        // Dose readout burned in next to the peak — documentation video
+        // carries the radiation context of the measurement.
+        const QString dose = QStringLiteral("· %1 µSv/h · %2 CPM")
+                                 .arg(geiger.doseMicroSvPerHour, 0, 'f', 2)
+                                 .arg(geiger.countsPerMinute, 0, 'f', 0);
+        painter.setPen(geiger.alert ? QColor(0xFF, 0x45, 0x3A)
+                                    : QColor(0xFF, 0xE1, 0x00));
+        painter.drawText(QPoint(plot.left()
+                                    + painter.fontMetrics().horizontalAdvance(headline)
+                                    + fontPx,
+                                panel.top() + fontPx + 4),
+                         dose);
+    }
     painter.setPen(QColor(0xF2, 0xF2, 0xF2));
     painter.drawText(QPoint(plot.left(), panel.bottom() - 6),
                      QString::number(spectrum.wavelengthsNm.first(), 'f', 0));

@@ -27,11 +27,69 @@ NavPage {
         boundsBehavior: Flickable.StopAtBounds
         clip: true
 
-        // Documentation videos recorded while this session was active.
+        // Dose measurements and documentation videos of this session.
         footer: Column {
             width: captureList.width
             spacing: 6
             property var videos: sessionSpectrumModel.sessionVideos(detailPage.sessionId)
+            property var measurements: sessionSpectrumModel.sessionMeasurements(detailPage.sessionId)
+
+            Label {
+                visible: parent.measurements.length > 0
+                topPadding: 16
+                text: qsTr("MEASUREMENTS")
+                font.pointSize: Theme.caption
+                font.letterSpacing: Theme.microLabelSpacing
+                color: Theme.secondaryLabel
+            }
+
+            Repeater {
+                model: parent.measurements
+                Rectangle {
+                    id: measurementRow
+                    required property var modelData
+                    width: captureList.width
+                    height: 40
+                    radius: Theme.radiusControl
+                    color: Theme.surface
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        // Dosimeter badge
+                        Rectangle {
+                            width: 56
+                            height: 22
+                            radius: 5
+                            color: Theme.fill
+                            Label {
+                                anchors.centerIn: parent
+                                text: qsTr("GEIGER")
+                                font.pointSize: Theme.caption
+                                font.letterSpacing: Theme.microLabelSpacing
+                                color: Theme.secondaryLabel
+                            }
+                        }
+                        Label {
+                            text: JSON.parse(measurementRow.modelData.summary).name || qsTr("Dose")
+                            font.pointSize: Theme.footnote
+                            color: Theme.label
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: measurementRow.modelData.value.toFixed(2) + " "
+                                  + measurementRow.modelData.unit
+                            font.family: Theme.readoutFontName
+                            font.pointSize: Theme.caption
+                            color: Theme.accent
+                        }
+                    }
+                }
+            }
 
             Label {
                 visible: parent.videos.length > 0
