@@ -45,6 +45,8 @@ Everything is C++ and QML. No Rust, no new third-party libraries. QML stays a th
 - Observation (M5, 2026-07-03): The Metal RHI backend does not support line widths other than 1 px, so `QSGGeometry::setLineWidth(2)` logs a warning and renders 1 px anyway. The call was removed; if a fatter trace is wanted, the Milestone 6 polish pass should build triangle-strip ribbons instead of line strips.
   Evidence: "Line widths other than 1 are not supported by the graphics API" in the CSV log.
 - Observation (M5, 2026-07-03): First live-fire worked end to end — during the smoke run the maintainer pressed Start: auto-connect engaged, the mercury simulator streamed at 100 ms intervals for ~34 s, Stop cleanly halted it. CSV log lines 22:29:18–22:29:52.
+- Observation (post-M8, 2026-07-04): Settings rows rendered as emoji garbage on macOS. Cause: `Theme.fontName` was `""` ("use the platform default"), but Qt resolves an empty `font.family` to the first family alphabetically — Apple Color Emoji on macOS — so every label binding `Style.fontName`/`Theme.fontName` (e.g. `SettingSwitcher`) drew emoji glyphs. Fixed centrally: `Theme.fontName` now resolves to `Qt.application.font.family`. Rule going forward: never bind `font.family` to a possibly-empty string.
+  Evidence: maintainer screenshot of the GENERAL section; `grep font.family` showed `SettingSwitcher.qml:27` and legacy `MainPage.qml` as the affected consumers.
 - (More to be filled during implementation.)
 
 ## Decision Log

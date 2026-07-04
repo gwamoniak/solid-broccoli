@@ -42,7 +42,10 @@ QtObject {
     property int footnote:   13
     property int caption:    11
 
-    property string fontName: ""
+    // The actual platform default family. Never leave a font.family binding
+    // as an empty string: Qt resolves "" to the first family alphabetically,
+    // which on macOS is Apple Color Emoji — text turns into emoji soup.
+    property string fontName: Qt.application.font.family
     // Monospaced font for live numeric readouts (wavelengths, counts,
     // timers) so digits don't jitter horizontally as values change.
     property string readoutFontName: "Menlo"
