@@ -1,7 +1,9 @@
 #include "CameraService.h"
 
 #include <QDateTime>
+#include <QGuiApplication>
 #include <QMediaFormat>
+#include <QPermissions>
 #include <QUrl>
 #include <QVideoFrame>
 #include <QVideoFrameFormat>
@@ -190,7 +192,38 @@ void CameraService::setActive(bool active)
     if (!m_camera) {
         return;
     }
-    m_camera->setActive(active);
+    if (!active) {
+        m_camera->setActive(false);
+        return;
+    }
+
+    // Since Qt 6.5 the OS camera dialog is only raised by an explicit
+    // permission request; without it QCamera::setActive() silently fails
+    // ("Access to camera not granted") and the preview never starts. Request
+    // in response to the user opening the Camera tab, per the Qt best
+    // practice of tying the prompt to the triggering action.
+    QCameraPermission cameraPermission;
+    switch (qApp->checkPermission(cameraPermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qApp->requestPermission(cameraPermission, this, [this](const QPermission& result) {
+            if (result.status() == Qt::PermissionStatus::Granted) {
+                m_camera->setActive(true);
+            } else {
+                qWarning(logWarning()) << "Camera permission denied by the user.";
+                emit captureError(tr("Camera access was denied. Enable it in "
+                                     "System Settings > Privacy & Security > Camera."));
+            }
+        });
+        return;
+    case Qt::PermissionStatus::Denied:
+        qWarning(logWarning()) << "Camera permission is blocked in system settings.";
+        emit captureError(tr("Camera access is blocked. Enable it in "
+                             "System Settings > Privacy & Security > Camera."));
+        return;
+    case Qt::PermissionStatus::Granted:
+        break;
+    }
+    m_camera->setActive(true);
 }
 
 void CameraService::captureImage()
