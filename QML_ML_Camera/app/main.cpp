@@ -158,8 +158,9 @@ int main(int argc, char *argv[])
                              db.m_sessionDao.addVideo(sessionId, filePath, durationMs);
                      });
 
-    // Captured stills are registered into the current album as they are saved.
-    CaptureCoordinator captureCoordinator(cameraService, pictureModel);
+    // Captured stills are filed into the camera's target album as they are
+    // saved (destination chosen on the Camera page, persisted, never dropped).
+    CaptureCoordinator captureCoordinator(cameraService, pictureModel, albumModel);
 
     // Live detections for the QML chip row; results arrive queued from
     // whatever thread the detector published on.
@@ -229,6 +230,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("sessionModel", &sessionModel);
     context->setContextProperty("sessionSpectrumModel", &sessionSpectrumModel);
     context->setContextProperty("pluginModel",  &pluginManager);
+    context->setContextProperty("captureCoordinator", &captureCoordinator);
     context->setContextProperty("detectionModel", &detectionModel);
     context->setContextProperty("visionAvailable", detectionProcessor != nullptr);
     context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));

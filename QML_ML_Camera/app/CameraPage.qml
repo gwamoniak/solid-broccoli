@@ -95,6 +95,88 @@ NavPage {
         }
     }
 
+    // ── Destination-album picker: where captured photos are filed ──
+    Row {
+        id: albumPickerRow
+        anchors.top: videoOutput.top
+        anchors.topMargin: 12
+        anchors.horizontalCenter: videoOutput.horizontalCenter
+        spacing: 8
+        visible: cameraPage.photoMode && !CameraService.recording
+
+        ComboBox {
+            id: albumCombo
+            model: albumModel
+            textRole: "name"
+            valueRole: "id"
+            implicitWidth: 210
+            implicitHeight: 34
+            currentIndex: albumCombo.indexOfValue(captureCoordinator.targetAlbumId)
+            onActivated: captureCoordinator.setTargetAlbum(currentValue)
+
+            background: Rectangle {
+                radius: 17
+                color: Qt.alpha(Theme.surface, 0.85)
+                border.color: Theme.accent
+                border.width: Theme.hairline
+            }
+            contentItem: Row {
+                spacing: 6
+                leftPadding: 14
+                Label {
+                    text: qsTr("ALBUM")
+                    font.pointSize: Theme.caption
+                    font.letterSpacing: Theme.microLabelSpacing
+                    color: Theme.secondaryLabel
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Label {
+                    text: captureCoordinator.targetAlbumName
+                    font.pointSize: Theme.subhead
+                    color: Theme.label
+                    elide: Text.ElideRight
+                    width: 120
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+            indicator: Label {
+                text: "▾"
+                color: Theme.secondaryLabel
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
+        // New album
+        Rectangle {
+            width: 34
+            height: 34
+            radius: 17
+            color: Qt.alpha(Theme.surface, 0.85)
+            border.color: Theme.accent
+            border.width: Theme.hairline
+
+            Label {
+                anchors.centerIn: parent
+                text: "＋"
+                font.pointSize: Theme.body
+                color: Theme.accent
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: newAlbumDialog.open()
+            }
+        }
+    }
+
+    InputDialog {
+        id: newAlbumDialog
+        label: qsTr("New album")
+        hint: qsTr("Album name")
+        onAccepted: captureCoordinator.createAlbumAndSelect(editText.text)
+    }
+
     // ── Live detection chips (object detection enabled + objects in view) ──
     Row {
         anchors.top: videoOutput.top

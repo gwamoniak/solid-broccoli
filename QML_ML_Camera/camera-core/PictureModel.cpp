@@ -38,6 +38,21 @@ void PictureModel::addPictureFromUrl(const QUrl& _FileUrl)
     qDebug(logDebug()) << "Picture name: " << _FileUrl.toString();
 }
 
+void PictureModel::addPictureToAlbum(int _nAlbumID, const QUrl& _FileUrl)
+{
+    // The loaded album: reuse addPicture so the gallery updates live.
+    if (_nAlbumID == m_nAlbumID) {
+        addPicture(Picture(_FileUrl));
+        return;
+    }
+    // A different album: insert straight through the DAO, leaving the
+    // currently loaded album's rows untouched.
+    Picture picture(_FileUrl);
+    m_sqlDB.m_pictureDao.addPictureInAlbum(_nAlbumID, picture);
+    qDebug(logInfo()) << "Picture filed into album" << _nAlbumID << ":"
+                      << _FileUrl.toString();
+}
+
 void PictureModel::rename(int row, const QString &_name)
 {
     setData(index(row),_name,DBRoles::NameRole);
