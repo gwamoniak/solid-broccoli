@@ -297,6 +297,20 @@ NavPage {
                         value: AppSettings.mirrorPreview
                         onToggled: function(checked) { AppSettings.mirrorPreview = checked }
                     }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    SettingSwitcher {
+                        width: parent.width
+                        text: qsTr("Spectrum overlay on video")
+                        value: AppSettings.spectrumOverlay
+                        onToggled: function(checked) { AppSettings.spectrumOverlay = checked }
+                    }
                 }
             }
 

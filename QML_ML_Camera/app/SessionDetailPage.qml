@@ -27,6 +27,53 @@ NavPage {
         boundsBehavior: Flickable.StopAtBounds
         clip: true
 
+        // Documentation videos recorded while this session was active.
+        footer: Column {
+            width: captureList.width
+            spacing: 6
+            property var videos: sessionSpectrumModel.sessionVideos(detailPage.sessionId)
+
+            Label {
+                visible: parent.videos.length > 0
+                topPadding: 16
+                text: qsTr("VIDEOS")
+                font.pointSize: Theme.caption
+                font.letterSpacing: Theme.microLabelSpacing
+                color: Theme.secondaryLabel
+            }
+
+            Repeater {
+                model: parent.videos
+                Rectangle {
+                    id: videoRow
+                    required property var modelData
+                    width: captureList.width
+                    height: 40
+                    radius: Theme.radiusControl
+                    color: Theme.surface
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        Label {
+                            text: videoRow.modelData.name
+                            font.pointSize: Theme.footnote
+                            color: Theme.label
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: Math.round(videoRow.modelData.durationMs / 1000) + " s"
+                            font.family: Theme.readoutFontName
+                            font.pointSize: Theme.caption
+                            color: Theme.secondaryLabel
+                        }
+                    }
+                }
+            }
+        }
+
         delegate: Rectangle {
             id: captureRow
             required property int index

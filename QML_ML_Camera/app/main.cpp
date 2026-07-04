@@ -16,6 +16,7 @@
 #include "PictureProvider.h"
 #include "CameraService.h"
 #include "SpectrometerService.h"
+#include "SpectrumOverlayProcessor.h"
 #include "SpectrumView.h"
 #include "CaptureCoordinator.h"
 #include "PluginManager.h"
@@ -57,10 +58,29 @@ int main(int argc, char *argv[])
     // thread runs processor code that lives in the loaded plugin libraries,
     // and the manager unloads those libraries in its destructor.
     PluginManager pluginManager;
+
+    // Constructed before CameraService so the overlay (and the service whose
+    // snapshot it reads) outlive the camera worker thread that calls it.
+    AppSettings appSettings;
+    SpectrometerService spectrometerService;
+    spectrometerService.setSessionStore(&sessionModel, &sessionSpectrumModel);
+    SpectrumOverlayProcessor overlayProcessor(
+        [&spectrometerService]() { return spectrometerService.latestSpectrumSnapshot(); });
+
     CameraService cameraService;
 
     QObject::connect(&cameraService, &CameraService::recordingSaved,
                      &movieModel, &MovieModel::addRecording);
+
+    // Documentation videos recorded while a spectroscopy session is active
+    // are linked to that session.
+    QObject::connect(&cameraService, &CameraService::recordingSaved,
+                     &spectrometerService,
+                     [&db, &spectrometerService](const QString& filePath, qint64 durationMs) {
+                         const int sessionId = spectrometerService.activeSessionId();
+                         if (sessionId >= 0)
+                             db.m_sessionDao.addVideo(sessionId, filePath, durationMs);
+                     });
 
     // Captured stills are registered into the current album as they are saved.
     CaptureCoordinator captureCoordinator(cameraService, pictureModel);
@@ -68,18 +88,26 @@ int main(int argc, char *argv[])
     // Discover frame-processor plugins and keep the camera pipeline's active
     // processor list in sync with the user's enable/disable choices.
     pluginManager.loadPlugins();
+    // The preview/record pipeline is the enabled plugins plus, when toggled,
+    // the app-internal spectrum overlay.
+    auto rebuildPipeline = [&pluginManager, &appSettings, &overlayProcessor,
+                            &cameraService]() {
+        QList<FrameProcessor*> processors = pluginManager.enabledProcessors();
+        if (appSettings.spectrumOverlay())
+            processors.append(&overlayProcessor);
+        cameraService.setProcessors(processors);
+    };
     QObject::connect(&pluginManager, &PluginManager::enabledProcessorsChanged,
-                     &cameraService, &CameraService::setProcessors);
-    cameraService.setProcessors(pluginManager.enabledProcessors());
+                     &cameraService,
+                     [rebuildPipeline](const QList<FrameProcessor*>&) { rebuildPipeline(); });
+    QObject::connect(&appSettings, &AppSettings::spectrumOverlayChanged,
+                     &cameraService, rebuildPipeline);
+    rebuildPipeline();
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
 
-    AppSettings appSettings;
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
-
-    SpectrometerService spectrometerService;
-    spectrometerService.setSessionStore(&sessionModel, &sessionSpectrumModel);
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
                                  &spectrometerService);
     qmlRegisterType<SpectrumView>("solid.broccoli", 1, 0, "SpectrumView");

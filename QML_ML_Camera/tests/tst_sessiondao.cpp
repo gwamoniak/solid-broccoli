@@ -83,6 +83,21 @@ private slots:
         QVERIFY(db.m_spectrumDao.spectra(sessionId).isEmpty());
     }
 
+    void videoLinksRoundTripAndCascade()
+    {
+        DatabaseManager db(":memory:");
+        const int sessionId = db.m_sessionDao.addSession("With video");
+        db.m_sessionDao.addVideo(sessionId, "/tmp/recording_001.mp4", 5250);
+
+        const auto videos = db.m_sessionDao.videos(sessionId);
+        QCOMPARE(videos.size(), 1);
+        QCOMPARE(videos.first().filepath, QStringLiteral("/tmp/recording_001.mp4"));
+        QCOMPARE(videos.first().durationMs, qint64(5250));
+
+        db.m_sessionDao.removeSession(sessionId);
+        QVERIFY(db.m_sessionDao.videos(sessionId).isEmpty());
+    }
+
     void renameAndRemoveSpectrum()
     {
         DatabaseManager db(":memory:");

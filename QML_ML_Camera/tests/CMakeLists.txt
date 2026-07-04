@@ -45,6 +45,17 @@ add_camera_test(tst_sessiondao tst_sessiondao.cpp)
 target_link_libraries(tst_sessiondao PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_spectrumexporter tst_spectrumexporter.cpp)
 target_link_libraries(tst_spectrumexporter PRIVATE spectro-core spectro-sim)
+
+# Video overlay processor (Milestone 8); compiled in like tst_pluginmanager.
+add_camera_test(tst_spectrumoverlay
+    tst_spectrumoverlay.cpp
+    ${CMAKE_SOURCE_DIR}/app/SpectrumOverlayProcessor.cpp
+)
+target_include_directories(tst_spectrumoverlay PRIVATE
+    ${CMAKE_SOURCE_DIR}/app
+    ${CMAKE_SOURCE_DIR}/processor-api
+)
+target_link_libraries(tst_spectrumoverlay PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 

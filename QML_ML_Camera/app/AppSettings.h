@@ -14,6 +14,7 @@ class AppSettings : public QObject
     Q_OBJECT
     Q_PROPERTY(bool shutterFlash READ shutterFlash WRITE setShutterFlash NOTIFY shutterFlashChanged)
     Q_PROPERTY(bool mirrorPreview READ mirrorPreview WRITE setMirrorPreview NOTIFY mirrorPreviewChanged)
+    Q_PROPERTY(bool spectrumOverlay READ spectrumOverlay WRITE setSpectrumOverlay NOTIFY spectrumOverlayChanged)
 
 public:
     explicit AppSettings(QObject* parent = nullptr);
@@ -24,14 +25,19 @@ public:
     bool mirrorPreview() const;
     void setMirrorPreview(bool enabled);
 
+    bool spectrumOverlay() const;
+    void setSpectrumOverlay(bool enabled);
+
 signals:
     void shutterFlashChanged();
     void mirrorPreviewChanged();
+    void spectrumOverlayChanged();
 
 private:
     QSettings m_settings;
     bool m_shutterFlash;
     bool m_mirrorPreview;
+    bool m_spectrumOverlay;
 };
 
 #endif // APPSETTINGS_H

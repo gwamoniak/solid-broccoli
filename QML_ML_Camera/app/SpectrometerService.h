@@ -100,6 +100,7 @@ public:
     // Session persistence (models owned by main; null in headless tests,
     // where saveCapture degrades to an error signal).
     void setSessionStore(SessionModel* sessions, SessionSpectrumModel* spectra);
+    int activeSessionId() const { return m_activeSessionId; }
     QVariantList overlayIds() const;
     QVector<Spectrum> overlaySpectra() const;
 

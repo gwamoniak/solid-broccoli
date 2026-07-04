@@ -20,6 +20,43 @@ void SessionDAO::init() const
                    "name TEXT, created_utc TEXT, notes TEXT)");
         DatabaseManager::debugQuery(query);
     }
+    if (!m_sqlDB.tables().contains("session_videos")) {
+        QSqlQuery query(m_sqlDB);
+        query.exec("CREATE TABLE session_videos (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                   "session_id INTEGER, filepath TEXT, duration_ms INTEGER)");
+        DatabaseManager::debugQuery(query);
+    }
+}
+
+void SessionDAO::addVideo(int sessionId, const QString& filepath, qint64 durationMs) const
+{
+    QSqlQuery query(m_sqlDB);
+    query.prepare("INSERT INTO session_videos (session_id, filepath, duration_ms) "
+                  "VALUES (:session, :path, :duration)");
+    query.bindValue(":session", sessionId);
+    query.bindValue(":path", filepath);
+    query.bindValue(":duration", durationMs);
+    query.exec();
+    DatabaseManager::debugQuery(query);
+}
+
+QVector<SessionVideoRecord> SessionDAO::videos(int sessionId) const
+{
+    QSqlQuery query(m_sqlDB);
+    query.prepare("SELECT * FROM session_videos WHERE session_id = (:session) ORDER BY id");
+    query.bindValue(":session", sessionId);
+    query.exec();
+    DatabaseManager::debugQuery(query);
+
+    QVector<SessionVideoRecord> list;
+    while (query.next()) {
+        SessionVideoRecord record;
+        record.id = query.value("id").toInt();
+        record.filepath = query.value("filepath").toString();
+        record.durationMs = query.value("duration_ms").toLongLong();
+        list.append(record);
+    }
+    return list;
 }
 
 int SessionDAO::addSession(const QString& name) const
@@ -52,6 +89,12 @@ void SessionDAO::removeSession(int id) const
     cascade.bindValue(":id", id);
     cascade.exec();
     DatabaseManager::debugQuery(cascade);
+
+    QSqlQuery videoCascade(m_sqlDB);
+    videoCascade.prepare("DELETE FROM session_videos WHERE session_id = (:id)");
+    videoCascade.bindValue(":id", id);
+    videoCascade.exec();
+    DatabaseManager::debugQuery(videoCascade);
 
     QSqlQuery query(m_sqlDB);
     query.prepare("DELETE FROM sessions WHERE id = (:id)");

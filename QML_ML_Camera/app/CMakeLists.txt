@@ -17,6 +17,8 @@ qt_add_executable(QML_ML_Camera_App
     PeakListModel.h
     SpectrometerService.cpp
     SpectrometerService.h
+    SpectrumOverlayProcessor.cpp
+    SpectrumOverlayProcessor.h
     SpectrumView.cpp
     SpectrumView.h
 )

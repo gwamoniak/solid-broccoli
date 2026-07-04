@@ -1,5 +1,8 @@
 #include "SessionSpectrumModel.h"
 
+#include <QFileInfo>
+#include <QVariantMap>
+
 #include "DatabaseManager.h"
 
 SessionSpectrumModel::SessionSpectrumModel(DatabaseManager& db, QObject* parent)
@@ -46,6 +49,19 @@ int SessionSpectrumModel::addSpectrum(int sessionId, const Spectrum& spectrum,
     if (sessionId == m_sessionId)
         setSessionId(m_sessionId);  // reload the visible list
     return id;
+}
+
+QVariantList SessionSpectrumModel::sessionVideos(int sessionId) const
+{
+    QVariantList list;
+    for (const SessionVideoRecord& video : m_sqlDB.m_sessionDao.videos(sessionId)) {
+        list.append(QVariantMap{
+            {QStringLiteral("name"), QFileInfo(video.filepath).fileName()},
+            {QStringLiteral("path"), video.filepath},
+            {QStringLiteral("durationMs"), video.durationMs},
+        });
+    }
+    return list;
 }
 
 SpectrumEntry SessionSpectrumModel::entryById(int id) const
