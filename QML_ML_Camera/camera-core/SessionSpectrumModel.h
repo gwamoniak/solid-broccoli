@@ -31,6 +31,9 @@ public:
     Q_INVOKABLE void rename(int row, const QString& name);
     Q_INVOKABLE QVariantList sessionVideos(int sessionId) const;
     Q_INVOKABLE QVariantList sessionMeasurements(int sessionId) const;
+    Q_INVOKABLE QVariantList sessionReports(int sessionId) const;
+    Q_INVOKABLE bool exportReportMarkdown(int reportId) const;
+    Q_INVOKABLE bool removeReport(int reportId) const;
     Q_INVOKABLE bool removeRows(int row, int count,
                                 const QModelIndex& parent = QModelIndex()) override;
 

@@ -14,6 +14,11 @@ qt_standard_project_setup()
 # so `ctest` in the build dir runs the suite under tests/.
 include(CTest)
 
+# On-device AI report generator (Milestone 13). Fetches llama.cpp at
+# configure time; pass -DAI_ANALYST=OFF to build without it (no network, no
+# llama) — the app degrades gracefully and the suite stays green.
+option(AI_ANALYST "Build the on-device AI report generator (fetches llama.cpp)" ON)
+
 add_subdirectory(logger-core)
 add_subdirectory(spectro-core)
 add_subdirectory(spectro-sim)
@@ -21,6 +26,9 @@ add_subdirectory(processor-api)
 add_subdirectory(camera-core)
 add_subdirectory(plugins/grayscale)
 add_subdirectory(plugins/objectdetect)
+if(AI_ANALYST)
+    add_subdirectory(ai-core)
+endif()
 add_subdirectory(app)
 
 if(BUILD_TESTING)

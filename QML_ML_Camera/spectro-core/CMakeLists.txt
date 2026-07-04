@@ -11,6 +11,10 @@ qt_add_library(spectro-core SHARED
     GeigerCodec.h
     GeigerMath.cpp
     GeigerMath.h
+    PeakMatcher.cpp
+    PeakMatcher.h
+    SpectralLineLibrary.cpp
+    SpectralLineLibrary.h
     CodecDevice.h
     ProtocolCodec.h
     SensorDevice.cpp

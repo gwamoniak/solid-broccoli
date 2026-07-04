@@ -29,6 +29,10 @@
 #include "PluginManager.h"
 #include "AppSettings.h"
 
+#ifdef HAVE_AI_ANALYST
+#include "ReportService.h"
+#endif
+
 
 // The object-detection plugin lives in <app>/vision/, not the generic
 // plugins/ scan directory: it is loaded explicitly here and composed into
@@ -211,6 +215,11 @@ int main(int argc, char *argv[])
                      &cameraService, rebuildPipeline);
     rebuildPipeline();
 
+#ifdef HAVE_AI_ANALYST
+    // Constructed before the engine so QML never outlives it.
+    ReportService reportService(db, spectrometerService, detectionModel, appSettings);
+#endif
+
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
 
@@ -233,6 +242,16 @@ int main(int argc, char *argv[])
     context->setContextProperty("captureCoordinator", &captureCoordinator);
     context->setContextProperty("detectionModel", &detectionModel);
     context->setContextProperty("visionAvailable", detectionProcessor != nullptr);
+
+    // AI report generator: present only when ai-core (llama.cpp) was built.
+    // QML must reference reportService exclusively inside aiAvailable guards.
+#ifdef HAVE_AI_ANALYST
+    context->setContextProperty("reportService", &reportService);
+    context->setContextProperty("aiAvailable", true);
+#else
+    context->setContextProperty("reportService", QVariant());
+    context->setContextProperty("aiAvailable", false);
+#endif
     context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
 

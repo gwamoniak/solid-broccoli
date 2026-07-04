@@ -89,6 +89,29 @@ target_compile_definitions(tst_pluginmanager PRIVATE
     GRAYSCALE_PLUGIN_DIR="$<TARGET_FILE_DIR:grayscale-processor>"
 )
 
+# AI analyst grounding (Milestone 13): deterministic identification, report
+# context, and report persistence — all model-free, run everywhere.
+add_camera_test(tst_peakmatcher tst_peakmatcher.cpp)
+target_link_libraries(tst_peakmatcher PRIVATE spectro-core spectro-sim)
+add_camera_test(tst_reportcontext
+    tst_reportcontext.cpp
+    ${CMAKE_SOURCE_DIR}/app/ReportContextBuilder.cpp
+)
+target_include_directories(tst_reportcontext PRIVATE
+    ${CMAKE_SOURCE_DIR}/app
+    ${CMAKE_SOURCE_DIR}/processor-api
+)
+target_link_libraries(tst_reportcontext PRIVATE spectro-core spectro-sim)
+add_camera_test(tst_reportdao tst_reportdao.cpp)
+target_link_libraries(tst_reportdao PRIVATE spectro-core)
+
+# Generation smoke test: only built with the AI target, and QSKIPs unless
+# SOLIDBROCCOLI_TEST_GGUF points at a model file.
+if(TARGET ai-core)
+    add_camera_test(tst_aianalyst tst_aianalyst.cpp)
+    target_link_libraries(tst_aianalyst PRIVATE ai-core)
+endif()
+
 # Vision pipeline v1.1 (Milestone 12): pure detector math (no ONNX Runtime,
 # no model) and the structured-result channel into DetectionModel.
 add_camera_test(tst_visionpost

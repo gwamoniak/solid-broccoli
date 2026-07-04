@@ -25,6 +25,8 @@ qt_add_library(camera-core SHARED
     PictureModel.h
     MeasurementDAO.cpp
     MeasurementDAO.h
+    ReportDAO.cpp
+    ReportDAO.h
     SessionDAO.cpp
     SessionDAO.h
     SessionModel.cpp

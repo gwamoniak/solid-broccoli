@@ -1,9 +1,13 @@
 #include "SessionSpectrumModel.h"
 
+#include <QDesktopServices>
+#include <QFile>
 #include <QFileInfo>
+#include <QUrl>
 #include <QVariantMap>
 
 #include "DatabaseManager.h"
+#include "StorageLocations.h"
 
 SessionSpectrumModel::SessionSpectrumModel(DatabaseManager& db, QObject* parent)
     : QAbstractListModel(parent)
@@ -78,6 +82,43 @@ QVariantList SessionSpectrumModel::sessionMeasurements(int sessionId) const
         });
     }
     return list;
+}
+
+QVariantList SessionSpectrumModel::sessionReports(int sessionId) const
+{
+    QVariantList list;
+    for (const ReportRecord& report : m_sqlDB.m_reportDao.reports(sessionId)) {
+        list.append(QVariantMap{
+            {QStringLiteral("id"), report.id},
+            {QStringLiteral("createdUtc"), report.createdUtc},
+            {QStringLiteral("modelName"), report.modelName},
+            {QStringLiteral("content"), report.contentMd},
+        });
+    }
+    return list;
+}
+
+bool SessionSpectrumModel::exportReportMarkdown(int reportId) const
+{
+    const ReportRecord report = m_sqlDB.m_reportDao.reportById(reportId);
+    if (report.id < 0)
+        return false;
+
+    const QString path = StorageLocations::exportsDir()
+        + QStringLiteral("/report_%1.md").arg(reportId);
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+    file.write(report.contentMd.toUtf8());
+    file.close();
+    QDesktopServices::openUrl(QUrl::fromLocalFile(StorageLocations::exportsDir()));
+    return true;
+}
+
+bool SessionSpectrumModel::removeReport(int reportId) const
+{
+    m_sqlDB.m_reportDao.removeReport(reportId);
+    return true;
 }
 
 SpectrumEntry SessionSpectrumModel::entryById(int id) const

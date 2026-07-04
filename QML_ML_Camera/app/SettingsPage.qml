@@ -19,6 +19,13 @@ NavPage {
         onAccepted: AppSettings.importDetectionModel(selectedFile)
     }
 
+    FileDialog {
+        id: ggufFileDialog
+        title: qsTr("Choose AI model")
+        nameFilters: [qsTr("GGUF models (*.gguf)")]
+        onAccepted: AppSettings.setAiModelFromUrl(selectedFile)
+    }
+
     Flickable {
         anchors.fill: parent
         anchors.margins: Theme.screenMargin
@@ -708,6 +715,101 @@ NavPage {
                         text: qsTr("Spectrum overlay on video")
                         value: AppSettings.spectrumOverlay
                         onToggled: function(checked) { AppSettings.spectrumOverlay = checked }
+                    }
+                }
+            }
+
+            // ── AI section (report generator; needs the ai-core build) ──
+            Label {
+                text: qsTr("AI")
+                font.pointSize: Theme.caption
+                color: Theme.secondaryLabel
+                Layout.leftMargin: 12
+                visible: aiAvailable
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                radius: Theme.radiusControl
+                color: Theme.surface
+                implicitHeight: aiCol.implicitHeight
+                visible: aiAvailable
+
+                Column {
+                    id: aiCol
+                    width: parent.width
+
+                    // Model row: the GGUF is referenced in place (gigabytes).
+                    Item {
+                        width: parent.width
+                        height: 50
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Model")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Item { Layout.fillWidth: true }
+                            Label {
+                                text: AppSettings.aiModelName.length > 0
+                                      ? AppSettings.aiModelName
+                                      : qsTr("None — choose a GGUF")
+                                font.pointSize: Theme.subhead
+                                color: AppSettings.aiModelName.length > 0
+                                       ? Theme.secondaryLabel : Theme.tertiaryLabel
+                                elide: Text.ElideMiddle
+                                Layout.maximumWidth: parent.width * 0.5
+                            }
+                            Button {
+                                id: chooseGgufButton
+                                text: qsTr("Choose…")
+                                onClicked: ggufFileDialog.open()
+                                background: Rectangle {
+                                    radius: Theme.radiusControl
+                                    color: chooseGgufButton.down ? Theme.accentPressed : Theme.fill
+                                }
+                                contentItem: Text {
+                                    text: chooseGgufButton.text
+                                    font.pointSize: Theme.subhead
+                                    color: Theme.label
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 12
+                                    rightPadding: 12
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Guidance footnote
+                    Item {
+                        width: parent.width
+                        height: 54
+
+                        Label {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            text: qsTr("Recommended: Gemma 3 4B instruct QAT Q4_0 (~3 GB RAM); "
+                                       + "Gemma 3 1B on smaller devices. Model use is subject "
+                                       + "to the Gemma Terms of Use.")
+                            font.pointSize: Theme.caption
+                            color: Theme.tertiaryLabel
+                            wrapMode: Text.WordWrap
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }

@@ -12,6 +12,7 @@ NavPage {
     property string sessionName: ""
     property int sessionRow: -1
     property int actionRow: -1
+    property int reportsRefresh: 0  // bumped when a report is saved
 
     pageTitle: sessionName
     showLargeTitle: false
@@ -130,6 +131,113 @@ NavPage {
                     }
                 }
             }
+
+            // AI reports of this session (viewing/export works even without
+            // the AI build; only generation needs it).
+            property var reports: {
+                detailPage.reportsRefresh
+                return sessionSpectrumModel.sessionReports(detailPage.sessionId)
+            }
+
+            Label {
+                visible: parent.reports.length > 0
+                topPadding: 16
+                text: qsTr("REPORTS")
+                font.pointSize: Theme.caption
+                font.letterSpacing: Theme.microLabelSpacing
+                color: Theme.secondaryLabel
+            }
+
+            Repeater {
+                model: parent.reports
+                Rectangle {
+                    id: reportRow
+                    required property var modelData
+                    width: captureList.width
+                    height: 40
+                    radius: Theme.radiusControl
+                    color: Theme.surface
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            reportText.text = reportRow.modelData.content
+                            reportViewer.reportId = reportRow.modelData.id
+                            reportViewer.streaming = false
+                            reportViewer.open()
+                        }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            Layout.preferredWidth: 34
+                            Layout.preferredHeight: 22
+                            radius: 5
+                            color: Theme.fill
+                            Label {
+                                anchors.centerIn: parent
+                                text: qsTr("AI")
+                                font.pointSize: Theme.caption
+                                font.letterSpacing: Theme.microLabelSpacing
+                                color: Theme.accent
+                            }
+                        }
+                        Label {
+                            text: reportRow.modelData.modelName
+                            font.pointSize: Theme.footnote
+                            color: Theme.label
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: reportRow.modelData.createdUtc
+                            font.family: Theme.readoutFontName
+                            font.pointSize: Theme.caption
+                            color: Theme.secondaryLabel
+                        }
+                    }
+                }
+            }
+
+            // Generation entry point — only with the AI build present.
+            Loader {
+                width: captureList.width
+                active: aiAvailable
+                sourceComponent: Button {
+                    id: generateButton
+                    enabled: !reportService.busy
+                    text: reportService.busy ? qsTr("Generating…")
+                                             : qsTr("Generate AI report")
+                    onClicked: {
+                        reportText.text = ""
+                        reportViewer.reportId = -1
+                        reportViewer.streaming = true
+                        reportViewer.open()
+                        reportService.generateReport(detailPage.sessionId)
+                    }
+                    background: Rectangle {
+                        radius: Theme.radiusControl
+                        color: generateButton.enabled
+                               ? (generateButton.down ? Theme.accentPressed : Theme.accent)
+                               : Theme.fill
+                    }
+                    contentItem: Text {
+                        text: generateButton.text
+                        font.pointSize: Theme.subhead
+                        color: generateButton.enabled ? Theme.textOverAccent
+                                                      : Theme.tertiaryLabel
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+
+            Item { height: 12; width: 1 }
         }
 
         delegate: Rectangle {
@@ -319,6 +427,130 @@ NavPage {
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         leftPadding: 12; rightPadding: 12
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Report viewer: shows a stored report, or streams a new one ──
+    Dialog {
+        id: reportViewer
+        property int reportId: -1
+        property bool streaming: false
+        modal: true
+        width: Math.min(640, detailPage.width - 48)
+        height: Math.min(560, detailPage.height - 96)
+        anchors.centerIn: parent
+        standardButtons: Dialog.NoButton
+
+        background: Rectangle {
+            color: Theme.surfaceElevated
+            radius: Theme.radiusSheet
+            border.color: Theme.separator
+            border.width: Theme.hairline
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 12
+
+            Label {
+                text: reportViewer.streaming ? qsTr("AI REPORT — GENERATING")
+                                             : qsTr("AI REPORT")
+                font.pointSize: Theme.caption
+                font.letterSpacing: Theme.microLabelSpacing
+                color: Theme.secondaryLabel
+            }
+
+            Flickable {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                contentHeight: reportText.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
+                TextArea {
+                    id: reportText
+                    width: parent.width
+                    readOnly: true
+                    wrapMode: TextEdit.Wrap
+                    textFormat: TextEdit.MarkdownText
+                    color: Theme.label
+                    font.pointSize: Theme.subhead
+                    background: null
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    id: exportReportButton
+                    visible: reportViewer.reportId > 0
+                    text: qsTr("Export .md")
+                    onClicked: sessionSpectrumModel.exportReportMarkdown(reportViewer.reportId)
+                    background: Rectangle {
+                        radius: Theme.radiusControl
+                        color: exportReportButton.down ? Theme.accentPressed : Theme.fill
+                    }
+                    contentItem: Text {
+                        text: exportReportButton.text
+                        font.pointSize: Theme.subhead
+                        color: Theme.label
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: 12
+                        rightPadding: 12
+                    }
+                }
+
+                Button {
+                    id: closeReportButton
+                    text: reportViewer.streaming ? qsTr("Cancel") : qsTr("Close")
+                    onClicked: {
+                        if (reportViewer.streaming && aiAvailable)
+                            reportService.cancel()
+                        reportViewer.close()
+                    }
+                    background: Rectangle {
+                        radius: Theme.radiusControl
+                        color: closeReportButton.down ? Theme.accentPressed : Theme.fill
+                    }
+                    contentItem: Text {
+                        text: closeReportButton.text
+                        font.pointSize: Theme.subhead
+                        color: Theme.label
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: 12
+                        rightPadding: 12
+                    }
+                }
+            }
+        }
+    }
+
+    // Streaming glue — only instantiated when the AI build is present, so
+    // reportService is never referenced otherwise.
+    Loader {
+        active: aiAvailable
+        sourceComponent: Item {
+            Connections {
+                target: reportService
+                function onStreamTextChanged() {
+                    if (reportViewer.streaming)
+                        reportText.text = reportService.streamText
+                }
+                function onReportSaved(sessionId) {
+                    if (sessionId === detailPage.sessionId)
+                        detailPage.reportsRefresh++
+                    reportViewer.streaming = false
+                }
+                function onErrorOccurred(message) {
+                    if (reportViewer.streaming) {
+                        reportText.text = qsTr("**Error:** ") + message
+                        reportViewer.streaming = false
                     }
                 }
             }

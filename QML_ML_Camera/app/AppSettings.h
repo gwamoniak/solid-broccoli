@@ -22,6 +22,8 @@ class AppSettings : public QObject
     Q_PROPERTY(QString detectionModelPath READ detectionModelPath NOTIFY detectionModelPathChanged)
     Q_PROPERTY(QString detectionModelName READ detectionModelName NOTIFY detectionModelPathChanged)
     Q_PROPERTY(int detectionStride READ detectionStride WRITE setDetectionStride NOTIFY detectionStrideChanged)
+    Q_PROPERTY(QString aiModelPath READ aiModelPath NOTIFY aiModelPathChanged)
+    Q_PROPERTY(QString aiModelName READ aiModelName NOTIFY aiModelPathChanged)
 
 public:
     explicit AppSettings(QObject* parent = nullptr);
@@ -55,6 +57,12 @@ public:
     Q_INVOKABLE bool importDetectionModel(const QUrl& source);
     Q_INVOKABLE void revealModelsDir();
 
+    // GGUF language models are gigabytes: the chosen file is referenced in
+    // place, never copied into the app's model store.
+    QString aiModelPath() const;
+    QString aiModelName() const;
+    Q_INVOKABLE void setAiModelFromUrl(const QUrl& source);
+
 signals:
     void shutterFlashChanged();
     void mirrorPreviewChanged();
@@ -64,6 +72,7 @@ signals:
     void objectDetectionChanged();
     void detectionModelPathChanged();
     void detectionStrideChanged();
+    void aiModelPathChanged();
     void modelImportFailed(const QString& message);
 
 private:
@@ -76,6 +85,7 @@ private:
     bool m_objectDetection;
     QString m_detectionModelPath;
     int m_detectionStride;
+    QString m_aiModelPath;
 };
 
 #endif // APPSETTINGS_H

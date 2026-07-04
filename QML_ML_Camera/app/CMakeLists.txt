@@ -19,6 +19,8 @@ qt_add_executable(QML_ML_Camera_App
     StripChartView.h
     PictureProvider.cpp
     PictureProvider.h
+    ReportContextBuilder.cpp
+    ReportContextBuilder.h
     PeakListModel.cpp
     PeakListModel.h
     SpectrometerService.cpp
@@ -55,6 +57,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
         Theme.qml
         ToolBarTheme.qml
         main.qml
+        prompts/report_v1.md
         qmldir
         images/svg/add-album.svg
         images/svg/add-photo.svg
@@ -97,6 +100,13 @@ add_dependencies(QML_ML_Camera_App grayscale-processor)
 # Same for the detection plugin, which only exists when ONNX Runtime was found.
 if(TARGET objectdetect-processor)
     add_dependencies(QML_ML_Camera_App objectdetect-processor)
+endif()
+
+# The report workflow only exists when ai-core (llama.cpp) is built.
+if(TARGET ai-core)
+    target_sources(QML_ML_Camera_App PRIVATE ReportService.cpp ReportService.h)
+    target_link_libraries(QML_ML_Camera_App PRIVATE ai-core)
+    target_compile_definitions(QML_ML_Camera_App PRIVATE HAVE_AI_ANALYST)
 endif()
 
 target_compile_definitions(QML_ML_Camera_App

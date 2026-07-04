@@ -21,8 +21,31 @@ AppSettings::AppSettings(QObject* parent)
       m_geigerAlertThreshold(m_settings.value("geiger/alertThreshold", 0.5).toDouble()),
       m_objectDetection(m_settings.value("vision/objectDetection", false).toBool()),
       m_detectionModelPath(m_settings.value("vision/modelPath").toString()),
-      m_detectionStride(m_settings.value("vision/stride", 3).toInt())
+      m_detectionStride(m_settings.value("vision/stride", 3).toInt()),
+      m_aiModelPath(m_settings.value("ai/modelPath").toString())
 {
+}
+
+QString AppSettings::aiModelPath() const
+{
+    return m_aiModelPath;
+}
+
+QString AppSettings::aiModelName() const
+{
+    return m_aiModelPath.isEmpty() ? QString() : QFileInfo(m_aiModelPath).fileName();
+}
+
+void AppSettings::setAiModelFromUrl(const QUrl& source)
+{
+    const QString path = source.isLocalFile() ? source.toLocalFile() : source.toString();
+    if (path == m_aiModelPath) {
+        return;
+    }
+    m_aiModelPath = path;
+    m_settings.setValue("ai/modelPath", path);
+    qDebug(logInfo()) << "AI model selected:" << path;
+    emit aiModelPathChanged();
 }
 
 bool AppSettings::objectDetection() const

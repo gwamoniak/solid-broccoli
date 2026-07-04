@@ -102,6 +102,12 @@ void SessionDAO::removeSession(int id) const
     measurementCascade.exec();
     DatabaseManager::debugQuery(measurementCascade);
 
+    QSqlQuery reportCascade(m_sqlDB);
+    reportCascade.prepare("DELETE FROM reports WHERE session_id = (:id)");
+    reportCascade.bindValue(":id", id);
+    reportCascade.exec();
+    DatabaseManager::debugQuery(reportCascade);
+
     QSqlQuery query(m_sqlDB);
     query.prepare("DELETE FROM sessions WHERE id = (:id)");
     query.bindValue(":id", id);
