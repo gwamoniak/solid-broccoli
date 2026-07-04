@@ -1,5 +1,12 @@
 #include "AppSettings.h"
 
+#include <QCryptographicHash>
+#include <QDesktopServices>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+
+#include "StorageLocations.h"
 #include "logger.h"
 
 // Defaults preserve the app's prior behavior: the shutter flash was always on,
@@ -11,8 +18,95 @@ AppSettings::AppSettings(QObject* parent)
       m_spectrumOverlay(m_settings.value("ui/spectrumOverlay", false).toBool()),
       // 0.0057 µSv/h per CPM: the common SBM-20 tube approximation.
       m_geigerTubeFactor(m_settings.value("geiger/tubeFactor", 0.0057).toDouble()),
-      m_geigerAlertThreshold(m_settings.value("geiger/alertThreshold", 0.5).toDouble())
+      m_geigerAlertThreshold(m_settings.value("geiger/alertThreshold", 0.5).toDouble()),
+      m_objectDetection(m_settings.value("vision/objectDetection", false).toBool()),
+      m_detectionModelPath(m_settings.value("vision/modelPath").toString()),
+      m_detectionStride(m_settings.value("vision/stride", 3).toInt())
 {
+}
+
+bool AppSettings::objectDetection() const
+{
+    return m_objectDetection;
+}
+
+void AppSettings::setObjectDetection(bool enabled)
+{
+    if (m_objectDetection == enabled) {
+        return;
+    }
+    m_objectDetection = enabled;
+    m_settings.setValue("vision/objectDetection", enabled);
+    qDebug(logInfo()) << "Setting objectDetection =" << enabled;
+    emit objectDetectionChanged();
+}
+
+QString AppSettings::detectionModelPath() const
+{
+    return m_detectionModelPath;
+}
+
+QString AppSettings::detectionModelName() const
+{
+    return m_detectionModelPath.isEmpty() ? QString()
+                                          : QFileInfo(m_detectionModelPath).fileName();
+}
+
+int AppSettings::detectionStride() const
+{
+    return m_detectionStride;
+}
+
+void AppSettings::setDetectionStride(int stride)
+{
+    stride = qBound(1, stride, 10);
+    if (m_detectionStride == stride) {
+        return;
+    }
+    m_detectionStride = stride;
+    m_settings.setValue("vision/stride", stride);
+    qDebug(logInfo()) << "Setting detectionStride =" << stride;
+    emit detectionStrideChanged();
+}
+
+bool AppSettings::importDetectionModel(const QUrl& source)
+{
+    const QString sourcePath = source.isLocalFile() ? source.toLocalFile()
+                                                    : source.toString();
+    QFile input(sourcePath);
+    if (!input.open(QIODevice::ReadOnly)) {
+        const QString message = tr("Cannot read %1").arg(sourcePath);
+        qWarning(logWarning()) << "Model import failed:" << message;
+        emit modelImportFailed(message);
+        return false;
+    }
+
+    const QByteArray contents = input.readAll();
+    const QString checksum = QString::fromLatin1(
+        QCryptographicHash::hash(contents, QCryptographicHash::Sha256).toHex());
+
+    const QString target = StorageLocations::modelsDir() + QStringLiteral("/")
+        + QFileInfo(sourcePath).fileName();
+    QFile output(target);
+    if (!output.open(QIODevice::WriteOnly) || output.write(contents) != contents.size()) {
+        const QString message = tr("Cannot write %1").arg(target);
+        qWarning(logWarning()) << "Model import failed:" << message;
+        emit modelImportFailed(message);
+        return false;
+    }
+    output.close();
+
+    m_detectionModelPath = target;
+    m_settings.setValue("vision/modelPath", target);
+    m_settings.setValue("vision/modelSha256", checksum);
+    qDebug(logInfo()) << "Detection model imported:" << target << "sha256" << checksum;
+    emit detectionModelPathChanged();
+    return true;
+}
+
+void AppSettings::revealModelsDir()
+{
+    QDesktopServices::openUrl(QUrl::fromLocalFile(StorageLocations::modelsDir()));
 }
 
 double AppSettings::geigerTubeFactor() const

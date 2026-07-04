@@ -17,6 +17,7 @@ public:
     static QString thumbnailsDir();
     static QString logsDir();
     static QString exportsDir();
+    static QString modelsDir();
     static QString databasePath();
 
     // Redirects root() to a temporary directory; tests only.

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtMultimedia
 import solid.broccoli 1.0
 import "."
@@ -10,6 +11,13 @@ NavPage {
     showLargeTitle: true
 
     MediaDevices { id: mediaDevices }
+
+    FileDialog {
+        id: modelFileDialog
+        title: qsTr("Import detection model")
+        nameFilters: [qsTr("ONNX models (*.onnx)")]
+        onAccepted: AppSettings.importDetectionModel(selectedFile)
+    }
 
     Flickable {
         anchors.fill: parent
@@ -447,6 +455,162 @@ NavPage {
                             }
                             Label {
                                 text: GeigerService.alertThreshold.toFixed(2) + " µSv/h"
+                                font.family: Theme.readoutFontName
+                                font.pointSize: Theme.subhead
+                                color: Theme.label
+                                horizontalAlignment: Text.AlignRight
+                                Layout.preferredWidth: 88
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── VISION section (object detection; needs the ONNX plugin) ──
+            Label {
+                text: qsTr("VISION")
+                font.pointSize: Theme.caption
+                color: Theme.secondaryLabel
+                Layout.leftMargin: 12
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                radius: Theme.radiusControl
+                color: Theme.surface
+                implicitHeight: visionCol.implicitHeight
+
+                Column {
+                    id: visionCol
+                    width: parent.width
+
+                    // Unavailable note (plugin not built / ONNX Runtime absent)
+                    Item {
+                        width: parent.width
+                        height: 50
+                        visible: !visionAvailable
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Detection plugin not available — install ONNX Runtime and rebuild")
+                                font.pointSize: Theme.subhead
+                                color: Theme.tertiaryLabel
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+
+                    SettingSwitcher {
+                        width: parent.width
+                        visible: visionAvailable
+                        text: qsTr("Object detection")
+                        value: AppSettings.objectDetection
+                        onToggled: function(checked) { AppSettings.objectDetection = checked }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        visible: visionAvailable
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Model row: shows the imported model, opens the models folder.
+                    Item {
+                        width: parent.width
+                        height: 50
+                        visible: visionAvailable
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: AppSettings.revealModelsDir()
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Model")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Item { Layout.fillWidth: true }
+                            Label {
+                                text: AppSettings.detectionModelName.length > 0
+                                      ? AppSettings.detectionModelName
+                                      : qsTr("None — import a YOLO .onnx")
+                                font.pointSize: Theme.subhead
+                                color: AppSettings.detectionModelName.length > 0
+                                       ? Theme.secondaryLabel : Theme.tertiaryLabel
+                                elide: Text.ElideMiddle
+                                Layout.maximumWidth: parent.width * 0.5
+                            }
+                            Button {
+                                id: importModelButton
+                                text: qsTr("Import…")
+                                onClicked: modelFileDialog.open()
+                                background: Rectangle {
+                                    radius: Theme.radiusControl
+                                    color: importModelButton.down ? Theme.accentPressed : Theme.fill
+                                }
+                                contentItem: Text {
+                                    text: importModelButton.text
+                                    font.pointSize: Theme.subhead
+                                    color: Theme.label
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 12
+                                    rightPadding: 12
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        visible: visionAvailable
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // Detection stride: run the model every Nth preview frame.
+                    Item {
+                        width: parent.width
+                        height: 58
+                        visible: visionAvailable
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+
+                            Label {
+                                text: qsTr("Detect every")
+                                font.pointSize: Theme.body
+                                color: Theme.label
+                            }
+                            Slider {
+                                Layout.fillWidth: true
+                                from: 1
+                                to: 10
+                                stepSize: 1
+                                value: AppSettings.detectionStride
+                                onMoved: AppSettings.detectionStride = Math.round(value)
+                            }
+                            Label {
+                                text: AppSettings.detectionStride
+                                      + (AppSettings.detectionStride === 1
+                                         ? qsTr(" frame") : qsTr(" frames"))
                                 font.family: Theme.readoutFontName
                                 font.pointSize: Theme.subhead
                                 color: Theme.label

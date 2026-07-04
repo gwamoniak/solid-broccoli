@@ -95,6 +95,38 @@ NavPage {
         }
     }
 
+    // ── Live detection chips (object detection enabled + objects in view) ──
+    Row {
+        anchors.top: videoOutput.top
+        anchors.left: videoOutput.left
+        anchors.margins: 12
+        spacing: 6
+        visible: AppSettings.objectDetection && detectionModel.count > 0
+
+        Repeater {
+            model: detectionModel
+            Rectangle {
+                id: detectionChip
+                required property string label
+                required property string confidenceText
+                width: chipText.implicitWidth + 16
+                height: 24
+                radius: 12
+                color: Qt.alpha(Theme.surface, 0.8)
+                border.color: Theme.accent
+                border.width: Theme.hairline
+
+                Label {
+                    id: chipText
+                    anchors.centerIn: parent
+                    text: detectionChip.label + " " + detectionChip.confidenceText
+                    font.pointSize: Theme.caption
+                    color: Theme.accent
+                }
+            }
+        }
+    }
+
     // ── Bottom control bar ──
     Rectangle {
         id: controlBar

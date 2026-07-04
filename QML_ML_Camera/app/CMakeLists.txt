@@ -7,6 +7,8 @@ qt_add_executable(QML_ML_Camera_App
     CameraService.h
     CaptureCoordinator.cpp
     CaptureCoordinator.h
+    DetectionModel.cpp
+    DetectionModel.h
     FrameProcessingWorker.cpp
     FrameProcessingWorker.h
     GeigerService.cpp
@@ -92,6 +94,10 @@ target_link_libraries(QML_ML_Camera_App
 # Build the proof plugin alongside the app so it lands in app/plugins/ and is
 # discovered at runtime, even though the app does not link it.
 add_dependencies(QML_ML_Camera_App grayscale-processor)
+# Same for the detection plugin, which only exists when ONNX Runtime was found.
+if(TARGET objectdetect-processor)
+    add_dependencies(QML_ML_Camera_App objectdetect-processor)
+endif()
 
 target_compile_definitions(QML_ML_Camera_App
     PRIVATE APP_VERSION="${PROJECT_VERSION}"

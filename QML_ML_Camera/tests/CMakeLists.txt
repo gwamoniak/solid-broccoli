@@ -89,6 +89,25 @@ target_compile_definitions(tst_pluginmanager PRIVATE
     GRAYSCALE_PLUGIN_DIR="$<TARGET_FILE_DIR:grayscale-processor>"
 )
 
+# Vision pipeline v1.1 (Milestone 12): pure detector math (no ONNX Runtime,
+# no model) and the structured-result channel into DetectionModel.
+add_camera_test(tst_visionpost
+    tst_visionpost.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/objectdetect/VisionPost.cpp
+)
+target_include_directories(tst_visionpost PRIVATE
+    ${CMAKE_SOURCE_DIR}/plugins/objectdetect
+)
+add_camera_test(tst_pipelinemetadata
+    tst_pipelinemetadata.cpp
+    ${CMAKE_SOURCE_DIR}/app/DetectionModel.cpp
+)
+target_include_directories(tst_pipelinemetadata PRIVATE
+    ${CMAKE_SOURCE_DIR}/app
+    ${CMAKE_SOURCE_DIR}/processor-api
+)
+target_link_libraries(tst_pipelinemetadata PRIVATE processor-api)
+
 # The grayscale processor is a plugin (MODULE), so compile its source directly
 # into this test to exercise process() without QPluginLoader.
 add_camera_test(tst_frameprocessor_grayscale

@@ -21,3 +21,5 @@ Mechanics: tests are Qt Test executables `QML_ML_Camera/tests/tst_<area>.cpp`, r
     ctest --test-dir QML_ML_Camera/build --output-on-failure
 
 A bug found is reported with a minimal failing test that reproduces it (committed disabled only if the fix is out of scope), the observed vs. expected values, and the suspected defect location — the builder fixes production code, not you. Update the ExecPlan's `Surprises & Discoveries` with evidence when a test exposes something the plan didn't anticipate, and `Progress` for test work you complete. Report results faithfully: exact pass/fail counts and the output of any failure.
+
+ML-era rules (Milestones 12-13): tests that need a real model file or an optional third-party runtime must QSKIP when the prerequisite is absent, never fail. Pre/post-processing math (letterbox, NMS, decode; PeakMatcher, ReportContext) is written as pure functions precisely so it ground-truth tests on a bare machine — test those exhaustively; treat real-model inference tests as gated acceptances.

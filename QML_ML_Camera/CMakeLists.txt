@@ -20,6 +20,7 @@ add_subdirectory(spectro-sim)
 add_subdirectory(processor-api)
 add_subdirectory(camera-core)
 add_subdirectory(plugins/grayscale)
+add_subdirectory(plugins/objectdetect)
 add_subdirectory(app)
 
 if(BUILD_TESTING)

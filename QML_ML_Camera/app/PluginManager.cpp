@@ -62,6 +62,15 @@ void PluginManager::loadPlugins(const QStringList& extraDirs)
     qDebug(logInfo()) << "PluginManager: loaded" << m_plugins.size() << "processor(s).";
 }
 
+void PluginManager::setResultSink(std::function<void(const QVariantMap&)> sink)
+{
+    m_resultSink = std::move(sink);
+    for (const PluginEntry& entry : m_plugins) {
+        if (entry.processor)
+            entry.processor->setResultSink(m_resultSink);
+    }
+}
+
 void PluginManager::tryLoad(const QString& filePath)
 {
     auto* loader = new QPluginLoader(filePath);
@@ -94,6 +103,9 @@ void PluginManager::tryLoad(const QString& filePath)
         delete loader;
         return;
     }
+
+    if (m_resultSink)
+        processor->setResultSink(m_resultSink);
 
     PluginEntry entry;
     entry.loader = loader;

@@ -1,8 +1,11 @@
 #ifndef FRAMEPROCESSOR_H
 #define FRAMEPROCESSOR_H
 
+#include <functional>
+
 #include <QImage>
 #include <QString>
+#include <QVariantMap>
 #include <QtPlugin>
 
 // A "frame-processor plugin" is a shared library, loaded at runtime, that
@@ -40,9 +43,28 @@ public:
     // Called per frame on a worker thread. Return the transformed image; return
     // the input unchanged to act as a pass-through.
     virtual QImage process(const QImage& frame) = 0;
+
+    // ── v1.1 additions (default no-ops; pure-pixel processors ignore them) ──
+
+    // Structured results: a processor that analyzes frames (object detection
+    // and friends) calls the sink at most once per processed frame, from
+    // whatever thread produced the result, with a self-describing map — see
+    // Detection.h for the "detections" convention. Consumers are responsible
+    // for marshalling to the GUI thread.
+    virtual void setResultSink(std::function<void(const QVariantMap&)> sink)
+    {
+        Q_UNUSED(sink)
+    }
+
+    // Host-supplied configuration (model path, stride, thresholds ...),
+    // applied before or between frames. Keys are processor-specific.
+    virtual void configure(const QVariantMap& options) { Q_UNUSED(options) }
 };
 
-#define FrameProcessor_iid "broccoli.FrameProcessor/1.0"
+// v1.1: adding the virtuals above breaks binary compatibility for compiled
+// plugins, so the IID bumps — a stale v1.0 binary fails loudly at load
+// instead of corrupting a vtable. All in-tree plugins recompile with the tree.
+#define FrameProcessor_iid "broccoli.FrameProcessor/1.1"
 Q_DECLARE_INTERFACE(FrameProcessor, FrameProcessor_iid)
 
 #endif // FRAMEPROCESSOR_H

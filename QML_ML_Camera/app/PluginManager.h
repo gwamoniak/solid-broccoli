@@ -1,8 +1,11 @@
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
+#include <functional>
+
 #include <QAbstractListModel>
 #include <QList>
+#include <QVariantMap>
 
 class FrameProcessor;
 class QPluginLoader;
@@ -31,6 +34,11 @@ public:
     // to point at the build-tree plugin output without installing anything.
     void loadPlugins(const QStringList& extraDirs = QStringList());
 
+    // v1.1 result channel: forwarded to every processor at load time so any
+    // analyzing plugin can publish structured results. Set before
+    // loadPlugins(); pure-pixel processors inherit the default no-op.
+    void setResultSink(std::function<void(const QVariantMap&)> sink);
+
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -55,6 +63,7 @@ private:
     void tryLoad(const QString& filePath);
 
     QList<PluginEntry> m_plugins;
+    std::function<void(const QVariantMap&)> m_resultSink;
 };
 
 #endif // PLUGINMANAGER_H

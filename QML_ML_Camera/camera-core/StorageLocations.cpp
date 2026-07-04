@@ -38,6 +38,11 @@ QString StorageLocations::exportsDir()
     return ensureDir(root() + "/exports");
 }
 
+QString StorageLocations::modelsDir()
+{
+    return ensureDir(root() + "/models");
+}
+
 QString StorageLocations::databasePath()
 {
     return root() + "/solidBroccoli_Gallery.db";
