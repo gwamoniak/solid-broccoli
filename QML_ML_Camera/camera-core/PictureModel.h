@@ -23,10 +23,14 @@ public:
         FilePathRole,
         NameRole,
     };
-    PictureModel(const AlbumModel& _albumModel, QObject* parent = nullptr);
+    PictureModel(DatabaseManager& db, const AlbumModel& _albumModel, QObject* parent = nullptr);
 
     QModelIndex addPicture(const Picture& _picture);
     Q_INVOKABLE void addPictureFromUrl(const QUrl& _FileUrl);
+    // Files a picture into a specific album regardless of which album is
+    // currently loaded for viewing. If it is the loaded album, the row is
+    // also inserted live so the gallery updates without navigation.
+    Q_INVOKABLE void addPictureToAlbum(int _nAlbumID, const QUrl& _FileUrl);
     Q_INVOKABLE void rename(int row, const QString& _name);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

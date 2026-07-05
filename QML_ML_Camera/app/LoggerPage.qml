@@ -1,145 +1,85 @@
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 1.4
-import QtQuick.Dialogs 1.2
-import QtQuick.Controls 2.2
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
 import "."
 
-PageTheme {
-    id: pageTheme
+NavPage {
+    pageTitle: qsTr("Logger")
 
-    property url logsPath :  appPath + "/logs"
+    Component.onCompleted: {
+        loggerModel.readLatestLog()
+    }
 
-    toolbarTitle: "Logger"
-    toolbarButtons: ColumnLayout {
-        RoundButton{
-            id: openLOG
-            //text: qsTr("open LOG")
-            //font.pointSize: 12
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            Layout.preferredHeight:  Style.roundButtonHeight
-            Layout.preferredWidth:   Style.roundButtonWidth
-            antialiasing: true
-            icon.source:"qrc:/images/png/open_log.png"
-            icon.width :Style.roundButtonWidth
-            icon.height:Style.roundButtonHeight
-            background: Rectangle {
-                radius: Style.roundButtonRadius
-                color: Style.roundButtonGreen
-            }
-
+    trailing: Component {
+        ToolButton {
+            icon.source: "qrc:/images/svg/log.svg"
+            icon.color: Theme.accent
+            icon.width: 20; icon.height: 20
+            background: null
             onClicked: {
-                dialog.folder =  logsPath
-                console.log("app logs path: ",logsPath )
+                dialog.currentFolder = logsPath
                 dialog.open()
             }
-        }}
-
-
-    TableView {
-        id: tableView
-        anchors.topMargin: 35
-        anchors.rightMargin: 105
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.margins: 15
-
-        TableViewColumn {
-            role: "time"
-            title: "Time"
-             width: 160
         }
-        TableViewColumn {
-            role: "type"
-            title: "Type"
-             width: 150
-        }
-        TableViewColumn {
-            role: "message"
-            title: "Message"
-            width: 800
-        }
+    }
 
-        model: loggerModel
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: Theme.screenMargin
+        spacing: 0
 
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 36
+            radius: Theme.radiusControl
+            color: Theme.fill
 
-        // Setting lines in TableView to intercept mouse left click
-        rowDelegate: Rectangle {
-            anchors.fill: parent
-            color: styleData.selected ? 'skyblue' : (styleData.alternate ? 'whitesmoke' : 'white');
-            MouseArea {
+            RowLayout {
                 anchors.fill: parent
-                acceptedButtons: Qt.RightButton | Qt.LeftButton
-                onClicked: {
-                    tableView.selection.clear()
-                    tableView.selection.select(styleData.row)
-                    tableView.currentRow = styleData.row
-                    tableView.focus = true
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 12
+                Label { text: qsTr("Time");    color: Theme.label; font.weight: Font.Medium; Layout.preferredWidth: 180 }
+                Label { text: qsTr("Type");    color: Theme.label; font.weight: Font.Medium; Layout.preferredWidth: 180 }
+                Label { text: qsTr("Message"); color: Theme.label; font.weight: Font.Medium; Layout.fillWidth: true }
+            }
+        }
 
-                    switch(mouse.button) {
-                    case Qt.RightButton:
-                        contextMenu.popup() // Call the context menu
-                        break
-                    default:
-                        break
-                    }
+        ListView {
+            id: logList
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            model: loggerModel
+
+            delegate: Rectangle {
+                width: logList.width
+                height: 34
+                color: index % 2 === 0 ? Theme.surface : Theme.groupedBackground
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    spacing: 12
+                    Text { text: time;    color: Theme.label; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter; Layout.preferredWidth: 180 }
+                    Text { text: type;    color: Theme.secondaryLabel; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter; Layout.preferredWidth: 180 }
+                    Text { text: message; color: Theme.label; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter; Layout.fillWidth: true }
                 }
             }
         }
     }
 
-    // The context menu offers deleting a row from the database
-    Menu {
-        id: contextMenu
-
-        MenuItem {
-            text: qsTr("Remove")
-            onTriggered: {
-                /* Call the dialog box that will clarify the intention to remove the row from the database
-                 * */
-                dialogDelete.open()
-            }
-        }
-    }
-
-    // Dialog of confirmation the removal line from the database
-    MessageDialog {
-        id: dialogDelete
-        title: qsTr("Remove record")
-        text: qsTr("Confirm the deletion of log entries")
-        icon: StandardIcon.Warning
-        standardButtons: StandardButton.Ok | StandardButton.Cancel
-
-        // If the answer ...
-        onAccepted: {
-            /* ... remove the line by id, which is taken from the data model
-             * on the line number in the presentation
-             * */
-            //7database.removeRecord(myModel.getId(tableView.currentRow))
-            //myModel.updateModel();
-        }
-    }
-
     FileDialog {
         id: dialog
-        title: "Open file"
-        folder: ""
+        title: qsTr("Open log file")
+        currentFolder: logsPath
+        nameFilters: ["CSV files (*.csv)", "All files (*)"]
         onAccepted: {
-            var loggerUrl = dialog.fileUrl.toString()
-            loggerUrl =loggerUrl.replace(/^(file:\/{3})/,"") // cut out file:\\
+            var loggerUrl = dialog.selectedFile.toString()
+            loggerUrl = loggerUrl.replace(/^(file:\/{3})/, "")
             loggerModel.readCSV(loggerUrl)
-            dialog.close()
         }
     }
 }
-
-
-
-
-
-/*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:3;anchors_height:421;anchors_y:54}
-}
- ##^##*/

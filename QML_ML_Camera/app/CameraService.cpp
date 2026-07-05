@@ -1,0 +1,380 @@
+#include "CameraService.h"
+
+#include <QDateTime>
+#include <QGuiApplication>
+#include <QMediaFormat>
+#include <QPermissions>
+#include <QUrl>
+#include <QVideoFrame>
+#include <QVideoFrameFormat>
+
+#include "FrameProcessingWorker.h"
+#include "StorageLocations.h"
+#include "logger.h"
+
+CameraService::CameraService(QObject* parent)
+    : QObject(parent)
+{
+    m_captureSession.setImageCapture(&m_imageCapture);
+    m_captureSession.setRecorder(&m_recorder);
+
+    // The worker lives on its own thread so per-frame processing never blocks
+    // the GUI. Frames go out via process() (queued) and come back via
+    // processed() (queued onto this object's thread).
+    m_worker = new FrameProcessingWorker();
+    m_worker->moveToThread(&m_workerThread);
+    connect(&m_workerThread, &QThread::finished, m_worker, &QObject::deleteLater);
+    connect(m_worker, &FrameProcessingWorker::processed,
+            this, &CameraService::onFrameProcessed);
+    m_workerThread.start();
+
+    connect(&m_processingSink, &QVideoSink::videoFrameChanged,
+            this, &CameraService::onFrameChanged);
+
+    connect(&m_imageCapture, &QImageCapture::imageSaved,
+            this, [this](int, const QString& fileName) {
+        qDebug(logInfo()) << "Image saved:" << fileName;
+        emit imageSaved(fileName);
+    });
+    connect(&m_imageCapture, &QImageCapture::errorOccurred,
+            this, [this](int, QImageCapture::Error, const QString& message) {
+        qWarning(logWarning()) << "Image capture error:" << message;
+        emit captureError(message);
+    });
+
+    connect(&m_recorder, &QMediaRecorder::recorderStateChanged,
+            this, [this](QMediaRecorder::RecorderState state) {
+        emit recordingChanged();
+        if (state == QMediaRecorder::StoppedState
+                && m_recorder.error() == QMediaRecorder::NoError
+                && m_lastRecordingDurationMs > 0) {
+            const QString filePath = m_recorder.actualLocation().toLocalFile();
+            qDebug(logInfo()) << "Recording saved:" << filePath
+                              << "duration(ms):" << m_lastRecordingDurationMs;
+            emit recordingSaved(filePath, m_lastRecordingDurationMs);
+        }
+    });
+    connect(&m_recorder, &QMediaRecorder::durationChanged,
+            this, [this](qint64 duration) {
+        m_lastRecordingDurationMs = duration;
+        emit recordingDurationChanged();
+    });
+    connect(&m_recorder, &QMediaRecorder::errorOccurred,
+            this, [this](QMediaRecorder::Error, const QString& message) {
+        qWarning(logWarning()) << "Recording error:" << message;
+        emit captureError(message);
+    });
+
+    connect(&m_mediaDevices, &QMediaDevices::videoInputsChanged,
+            this, &CameraService::refreshDevices);
+
+    refreshDevices();
+}
+
+CameraService::~CameraService()
+{
+    m_workerThread.quit();
+    m_workerThread.wait();
+}
+
+QStringList CameraService::availableCameras() const
+{
+    QStringList names;
+    for (const QCameraDevice& device : m_devices) {
+        names.append(device.description());
+    }
+    return names;
+}
+
+int CameraService::currentCameraIndex() const
+{
+    return m_currentCameraIndex;
+}
+
+void CameraService::setCurrentCameraIndex(int index)
+{
+    if (index == m_currentCameraIndex || index < 0 || index >= m_devices.size()) {
+        return;
+    }
+    applyCamera(index);
+}
+
+QStringList CameraService::availableFormats() const
+{
+    QStringList names;
+    for (const QCameraFormat& format : m_formats) {
+        names.append(QStringLiteral("%1x%2 @ %3 fps (%4)")
+                         .arg(format.resolution().width())
+                         .arg(format.resolution().height())
+                         .arg(qRound(format.maxFrameRate()))
+                         .arg(QVideoFrameFormat::pixelFormatToString(format.pixelFormat())));
+    }
+    return names;
+}
+
+int CameraService::currentFormatIndex() const
+{
+    return m_currentFormatIndex;
+}
+
+void CameraService::setCurrentFormatIndex(int index)
+{
+    if (!m_camera || index == m_currentFormatIndex
+            || index < 0 || index >= m_formats.size()) {
+        return;
+    }
+    m_currentFormatIndex = index;
+    m_camera->setCameraFormat(m_formats.at(index));
+    qDebug(logInfo()) << "Camera format set:" << availableFormats().at(index);
+    emit currentFormatIndexChanged();
+}
+
+bool CameraService::isActive() const
+{
+    return m_camera && m_camera->isActive();
+}
+
+void CameraService::attachVideoOutput(QObject* videoOutput)
+{
+    m_videoOutput = videoOutput;
+    m_outputSink = videoOutput
+        ? videoOutput->property("videoSink").value<QVideoSink*>()
+        : nullptr;
+    rebuildPipeline();
+}
+
+void CameraService::setProcessors(const QList<FrameProcessor*>& processors)
+{
+    m_worker->setProcessors(processors);
+    m_hasProcessors = !processors.isEmpty();
+    qDebug(logInfo()) << "CameraService: active processors:" << processors.size();
+    rebuildPipeline();
+}
+
+void CameraService::rebuildPipeline()
+{
+    if (m_hasProcessors && m_outputSink) {
+        // Tap the camera: render into our sink, forward processed frames.
+        m_captureSession.setVideoSink(&m_processingSink);
+    } else if (m_videoOutput) {
+        // Direct path: the session drives the QML video output itself.
+        m_captureSession.setVideoOutput(m_videoOutput);
+    }
+}
+
+void CameraService::onFrameChanged(const QVideoFrame& frame)
+{
+    if (!m_hasProcessors || !m_outputSink || !frame.isValid()) {
+        return;
+    }
+    // Process the latest frame only: if the worker is still busy, drop this one
+    // rather than queueing and falling behind. QVideoFrame is implicitly
+    // shared, so handing it across threads is cheap; the worker does the
+    // (potentially GPU-readback) toImage() conversion off the GUI thread.
+    bool expected = false;
+    if (!m_frameBusy.compare_exchange_strong(expected, true)) {
+        return;
+    }
+    QMetaObject::invokeMethod(m_worker, "process", Qt::QueuedConnection,
+                              Q_ARG(QVideoFrame, frame));
+}
+
+void CameraService::onFrameProcessed(const QImage& result)
+{
+    if (m_outputSink && !result.isNull()) {
+        m_outputSink->setVideoFrame(QVideoFrame(result));
+    }
+    m_frameBusy.store(false);
+}
+
+void CameraService::setActive(bool active)
+{
+    if (!m_camera) {
+        return;
+    }
+    if (!active) {
+        m_camera->setActive(false);
+        return;
+    }
+
+    // Since Qt 6.5 the OS camera dialog is only raised by an explicit
+    // permission request; without it QCamera::setActive() silently fails
+    // ("Access to camera not granted") and the preview never starts. Request
+    // in response to the user opening the Camera tab, per the Qt best
+    // practice of tying the prompt to the triggering action.
+    QCameraPermission cameraPermission;
+    switch (qApp->checkPermission(cameraPermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qApp->requestPermission(cameraPermission, this, [this](const QPermission& result) {
+            if (result.status() == Qt::PermissionStatus::Granted) {
+                m_camera->setActive(true);
+            } else {
+                qWarning(logWarning()) << "Camera permission denied by the user.";
+                emit captureError(tr("Camera access was denied. Enable it in "
+                                     "System Settings > Privacy & Security > Camera."));
+            }
+        });
+        return;
+    case Qt::PermissionStatus::Denied:
+        qWarning(logWarning()) << "Camera permission is blocked in system settings.";
+        emit captureError(tr("Camera access is blocked. Enable it in "
+                             "System Settings > Privacy & Security > Camera."));
+        return;
+    case Qt::PermissionStatus::Granted:
+        break;
+    }
+    m_camera->setActive(true);
+}
+
+void CameraService::captureImage()
+{
+    if (m_imageCapture.isReadyForCapture()) {
+        m_imageCapture.captureToFile(nextPicturePath());
+    } else {
+        const QString message = tr("Camera is not ready to capture.");
+        qWarning(logWarning()) << message;
+        emit captureError(message);
+    }
+}
+
+bool CameraService::isRecording() const
+{
+    return m_recorder.recorderState() == QMediaRecorder::RecordingState;
+}
+
+QString CameraService::recordingDuration() const
+{
+    const int totalSeconds = static_cast<int>(m_lastRecordingDurationMs / 1000);
+    return QStringLiteral("%1:%2")
+        .arg(totalSeconds / 60, 2, 10, QLatin1Char('0'))
+        .arg(totalSeconds % 60, 2, 10, QLatin1Char('0'));
+}
+
+void CameraService::startRecording()
+{
+    if (isRecording()) {
+        return;
+    }
+    if (!isActive()) {
+        const QString message = tr("Camera is not active, cannot record.");
+        qWarning(logWarning()) << message;
+        emit captureError(message);
+        return;
+    }
+
+    QMediaFormat format(QMediaFormat::MPEG4);
+    format.setVideoCodec(QMediaFormat::VideoCodec::H264);
+    if (!format.isSupported(QMediaFormat::Encode)) {
+        qWarning(logWarning()) << "MPEG4/H264 not supported, using platform default format.";
+        format = QMediaFormat();
+    }
+    m_recorder.setMediaFormat(format);
+
+    m_lastRecordingDurationMs = 0;
+    emit recordingDurationChanged();
+
+    m_recorder.setOutputLocation(QUrl::fromLocalFile(nextRecordingPath()));
+    m_recorder.record();
+    qDebug(logInfo()) << "Recording started:" << m_recorder.outputLocation().toLocalFile();
+}
+
+void CameraService::stopRecording()
+{
+    if (isRecording()) {
+        m_recorder.stop();
+    }
+}
+
+void CameraService::refreshDevices()
+{
+    const QCameraDevice previousDevice =
+        (m_currentCameraIndex >= 0 && m_currentCameraIndex < m_devices.size())
+            ? m_devices.at(m_currentCameraIndex) : QCameraDevice();
+
+    m_devices = QMediaDevices::videoInputs();
+    emit availableCamerasChanged();
+
+    if (m_devices.isEmpty()) {
+        qWarning(logWarning()) << "No camera devices available.";
+        m_camera.reset();
+        m_currentCameraIndex = -1;
+        m_formats.clear();
+        m_currentFormatIndex = -1;
+        emit currentCameraIndexChanged();
+        emit availableFormatsChanged();
+        emit currentFormatIndexChanged();
+        emit activeChanged();
+        return;
+    }
+
+    int newIndex = m_devices.indexOf(previousDevice);
+    if (newIndex < 0) {
+        newIndex = m_devices.indexOf(QMediaDevices::defaultVideoInput());
+        if (newIndex < 0) {
+            newIndex = 0;
+        }
+        if (!previousDevice.isNull()) {
+            qWarning(logWarning()) << "Camera device disappeared, falling back to:"
+                                   << m_devices.at(newIndex).description();
+        }
+    }
+    applyCamera(newIndex);
+}
+
+void CameraService::applyCamera(int index)
+{
+    // A recording cannot survive its source device being replaced.
+    stopRecording();
+
+    // Preserve the running state across a device switch; the camera stays
+    // off at construction until the camera page activates it.
+    const bool wasActive = isActive();
+
+    m_currentCameraIndex = index;
+    m_camera = std::make_unique<QCamera>(m_devices.at(index));
+    m_captureSession.setCamera(m_camera.get());
+
+    connect(m_camera.get(), &QCamera::activeChanged,
+            this, &CameraService::activeChanged);
+    connect(m_camera.get(), &QCamera::errorOccurred,
+            this, [this](QCamera::Error, const QString& message) {
+        qWarning(logWarning()) << "Camera error:" << message;
+        emit captureError(message);
+    });
+
+    qDebug(logInfo()) << "Camera selected:" << m_devices.at(index).description();
+    refreshFormats();
+
+    if (wasActive) {
+        m_camera->start();
+    }
+    emit currentCameraIndexChanged();
+    emit activeChanged();
+}
+
+void CameraService::refreshFormats()
+{
+    m_formats = m_devices.at(m_currentCameraIndex).videoFormats();
+    m_currentFormatIndex = m_formats.isEmpty() ? -1 : 0;
+    if (m_currentFormatIndex >= 0) {
+        m_camera->setCameraFormat(m_formats.first());
+    }
+    emit availableFormatsChanged();
+    emit currentFormatIndexChanged();
+}
+
+QString CameraService::nextPicturePath() const
+{
+    const QString timestamp =
+        QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+    return StorageLocations::picturesDir()
+           + "/SolidBroccoli_PIC_" + timestamp + ".jpg";
+}
+
+QString CameraService::nextRecordingPath() const
+{
+    const QString timestamp =
+        QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+    return StorageLocations::recordingsDir()
+           + "/SolidBroccoli_VID_" + timestamp + ".mp4";
+}

@@ -20,11 +20,19 @@ public:
         NameRole,
     };
 
-    AlbumModel(QObject* parent = nullptr);
+    explicit AlbumModel(DatabaseManager& db, QObject* parent = nullptr);
 
     QModelIndex addAlbum(const Album& _album);
     Q_INVOKABLE void addAlbumFromName(const QString& _name);
+    // Creates an album and returns its new database id (for callers that
+    // must immediately target it, e.g. the camera destination picker).
+    Q_INVOKABLE int createAlbumReturningId(const QString& _name);
     Q_INVOKABLE void rename(int row, const QString& _name);
+
+    // Lookups for callers that address albums by id rather than by row.
+    Q_INVOKABLE int albumCount() const;
+    Q_INVOKABLE int albumIdAt(int row) const;
+    Q_INVOKABLE QString albumNameForId(int _nAlbumID) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& _index, int role = Qt::DisplayRole) const override;

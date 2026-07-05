@@ -7,6 +7,7 @@
 
 
 static QString sLogFileName;
+static QString sLogDir;
 
 void LogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
@@ -32,22 +33,20 @@ void LogMessageHandler(QtMsgType type, const QMessageLogContext &context, const 
     switch (type)
     {
     case QtInfoMsg:     textStream << "SolidBroccoli - "  ; break;
-#ifdef _DEBUG
     case QtDebugMsg:    textStream << "SolidBroccoli - "  ; break;
-#endif
     case QtWarningMsg:  textStream << "SolidBroccoli - "  ; break;
     case QtCriticalMsg: textStream << "SolidBroccoli - "  ; break;
     case QtFatalMsg:    textStream << "SolidBroccoli - "  ; break;;
     }
     textStream << context.category << ": "  << ","
-               << msg << endl;
+               << msg << Qt::endl;
     textStream.flush();    // Clear the buffered data
 }
 
 
 void Logger::InitLogFile()
 {
-    sLogFileName = QString(sLogFolderName + "/SolidBroccoli_Log_%1.csv")
+    sLogFileName = QString(sLogDir + "/SolidBroccoli_Log_%1.csv")
                        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm"));
 
 }
@@ -59,7 +58,7 @@ void Logger::DeleteOldLogs()
     QDir dir;
     dir.setFilter(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
     dir.setSorting(QDir::Time | QDir::Reversed);
-    dir.setPath(sLogFolderName);
+    dir.setPath(sLogDir);
     QString SolidBroccoliExp = ""; //match SolidBroccoli_Log
 
     QFileInfoList list = dir.entryInfoList();
@@ -71,9 +70,9 @@ void Logger::DeleteOldLogs()
         for (int i = 0; i < (list.size() - LOGFILES); i++)
         {
             QString path = list.at(i).absoluteFilePath();
-            SolidBroccoliExp = path.section(QRegExp("^((?!SolidBroccoli_Log).)*$"), 0, 0,
+            SolidBroccoliExp = path.section(QRegularExpression("^((?!SolidBroccoli_Log).)*$"), 0, 0,
                                      QString::SectionSkipEmpty); // delete only log files and leave other files intact
-            if(SolidBroccoliExp!= "")
+            if(SolidBroccoliExp != "")
             {
                 QFile file(path);
                 file.remove();
@@ -83,11 +82,10 @@ void Logger::DeleteOldLogs()
 
 }
 
-bool Logger::InitLogger()
+bool Logger::InitLogger(const QString& logDir)
 {
-    {
-        QDir().mkdir(sLogFolderName);
-    }
+    sLogDir = logDir;
+    QDir().mkpath(sLogDir);
 
     DeleteOldLogs(); //delete old log files
     InitLogFile(); //create the logfile name

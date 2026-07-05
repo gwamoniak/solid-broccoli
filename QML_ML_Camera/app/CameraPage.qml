@@ -1,134 +1,399 @@
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
-import QtMultimedia 5.8
-import Qt.labs.settings 1.0
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtMultimedia
 import solid.broccoli 1.0
 import "."
 
-PageTheme {
+NavPage {
+    id: cameraPage
+    showNavBar: false
+    background: Rectangle { color: "#000000" }
 
-    property string albumName
-    property int albumRowIndex
-
-    CameraProcessor{
-        id: cameraProcessor
+    Component.onCompleted: {
+        CameraService.attachVideoOutput(videoOutput)
+        CameraService.setActive(true)
     }
 
+    Component.onDestruction: {
+        CameraService.stopRecording()
+        CameraService.setActive(false)
+    }
 
-    ColumnLayout
-    {
-        anchors.fill: parent
-        GroupBox
-        {
-            id: videoGroupbox
-            title: qsTr("Video Preview")
-            label: Label{
-                color: Style.pictureText
-                text: videoGroupbox.title
-                font.pointSize: 18
-                anchors.horizontalCenter: parent.horizontalCenter
+    property bool photoMode: true
 
+    Connections {
+        target: CameraService
+        function onCaptureError(message) {
+            errorLabel.text = message
+            errorLabel.visible = true
+            errorTimer.restart()
+        }
+        function onImageSaved(filePath) {
+            if (AppSettings.shutterFlash)
+                flashOverlay.opacity = 0.8
+        }
+    }
+
+    // ── Full-bleed viewfinder ──
+    VideoOutput {
+        id: videoOutput
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: controlBar.top
+        fillMode: VideoOutput.PreserveAspectCrop
+
+        transform: Scale {
+            origin.x: videoOutput.width / 2
+            xScale: AppSettings.mirrorPreview ? -1 : 1
+        }
+    }
+
+    Rectangle {
+        id: flashOverlay
+        anchors.fill: videoOutput
+        color: "white"
+        opacity: 0
+        Behavior on opacity { NumberAnimation { duration: 300 } }
+        onOpacityChanged: if (opacity > 0.5) opacity = 0
+    }
+
+    // Recording duration badge
+    Rectangle {
+        anchors.top: parent.top
+        anchors.topMargin: 12
+        anchors.horizontalCenter: parent.horizontalCenter
+        visible: CameraService.recording
+        width: durationLabel.implicitWidth + 24
+        height: 28
+        radius: 14
+        color: Theme.destructive
+
+        Label {
+            id: durationLabel
+            anchors.centerIn: parent
+            text: "● " + CameraService.recordingDuration
+            color: "#FFFFFF"
+            font.pointSize: Theme.footnote
+            font.weight: Font.Medium
+        }
+    }
+
+    Label {
+        id: errorLabel
+        anchors.bottom: videoOutput.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.margins: 12
+        color: Theme.destructive
+        font.pointSize: Theme.subhead
+        visible: false
+        Timer {
+            id: errorTimer
+            interval: 4000
+            onTriggered: errorLabel.visible = false
+        }
+    }
+
+    // ── Destination-album picker: where captured photos are filed ──
+    Row {
+        id: albumPickerRow
+        anchors.top: videoOutput.top
+        anchors.topMargin: 12
+        anchors.horizontalCenter: videoOutput.horizontalCenter
+        spacing: 8
+        visible: cameraPage.photoMode && !CameraService.recording
+
+        ComboBox {
+            id: albumCombo
+            model: albumModel
+            textRole: "name"
+            valueRole: "id"
+            implicitWidth: 210
+            implicitHeight: 34
+            currentIndex: albumCombo.indexOfValue(captureCoordinator.targetAlbumId)
+            onActivated: captureCoordinator.setTargetAlbum(currentValue)
+
+            background: Rectangle {
+                radius: 17
+                color: Qt.alpha(Theme.surface, 0.85)
+                border.color: Theme.accent
+                border.width: Theme.hairline
+            }
+            contentItem: Row {
+                spacing: 6
+                leftPadding: 14
+                Label {
+                    text: qsTr("ALBUM")
+                    font.pointSize: Theme.caption
+                    font.letterSpacing: Theme.microLabelSpacing
+                    color: Theme.secondaryLabel
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Label {
+                    text: captureCoordinator.targetAlbumName
+                    font.pointSize: Theme.subhead
+                    color: Theme.label
+                    elide: Text.ElideRight
+                    width: 120
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+            indicator: Label {
+                text: "▾"
+                color: Theme.secondaryLabel
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
+        // New album
+        Rectangle {
+            width: 34
+            height: 34
+            radius: 17
+            color: Qt.alpha(Theme.surface, 0.85)
+            border.color: Theme.accent
+            border.width: Theme.hairline
+
+            Label {
+                anchors.centerIn: parent
+                text: "＋"
+                font.pointSize: Theme.body
+                color: Theme.accent
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: newAlbumDialog.open()
+            }
+        }
+    }
+
+    InputDialog {
+        id: newAlbumDialog
+        label: qsTr("New album")
+        hint: qsTr("Album name")
+        onAccepted: captureCoordinator.createAlbumAndSelect(editText.text)
+    }
+
+    // ── Live detection chips (object detection enabled + objects in view) ──
+    Row {
+        anchors.top: videoOutput.top
+        anchors.left: videoOutput.left
+        anchors.margins: 12
+        spacing: 6
+        visible: AppSettings.objectDetection && detectionModel.count > 0
+
+        Repeater {
+            model: detectionModel
+            Rectangle {
+                id: detectionChip
+                required property string label
+                required property string confidenceText
+                width: chipText.implicitWidth + 16
+                height: 24
+                radius: 12
+                color: Qt.alpha(Theme.surface, 0.8)
+                border.color: Theme.accent
+                border.width: Theme.hairline
+
+                Label {
+                    id: chipText
+                    anchors.centerIn: parent
+                    text: detectionChip.label + " " + detectionChip.confidenceText
+                    font.pointSize: Theme.caption
+                    color: Theme.accent
+                }
+            }
+        }
+    }
+
+    // ── Bottom control bar ──
+    Rectangle {
+        id: controlBar
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 160
+        color: "#000000"
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.topMargin: 8
+            spacing: 16
+
+            // Photo / Video mode switch
+            Row {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 24
+
+                Label {
+                    text: qsTr("PHOTO")
+                    font.pointSize: Theme.subhead
+                    font.weight: Font.Medium
+                    color: cameraPage.photoMode ? Theme.accent : Theme.secondaryLabel
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: cameraPage.photoMode = true
+                    }
+                }
+                Label {
+                    text: qsTr("VIDEO")
+                    font.pointSize: Theme.subhead
+                    font.weight: Font.Medium
+                    color: !cameraPage.photoMode ? Theme.accent : Theme.secondaryLabel
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: cameraPage.photoMode = false
+                    }
+                }
             }
 
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            Layout.topMargin: 10
+            // Shutter / record + settings
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: Math.min(parent.width - 48, Theme.maxContentWidth)
+                spacing: 0
 
-            VideoOutput
-            {
-                id: videoOutput
-                anchors.fill: parent
-                Camera
-                {
-                    id: camera
+                Item { Layout.fillWidth: true }
 
-                    Component.onCompleted:
-                    {
-                        cameraProcessor.setCamera(camera)
+                // Shutter / record button
+                Rectangle {
+                    width: Theme.shutterSize
+                    height: Theme.shutterSize
+                    radius: Theme.shutterSize / 2
+                    color: "transparent"
+                    border.width: Theme.accentRing
+                    border.color: cameraPage.photoMode ? Theme.accent : Theme.destructive
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: cameraPage.photoMode ? Theme.shutterSize - 12 : 28
+                        height: cameraPage.photoMode ? Theme.shutterSize - 12 : 28
+                        radius: cameraPage.photoMode ? (Theme.shutterSize - 12) / 2 : 6
+                        color: cameraPage.photoMode ? "#FFFFFF" : Theme.destructive
+
+                        Behavior on width  { NumberAnimation { duration: 150 } }
+                        Behavior on height { NumberAnimation { duration: 150 } }
+                        Behavior on radius { NumberAnimation { duration: 150 } }
                     }
 
-                    videoRecorder.audioBitRate: 48000
-                    videoRecorder.mediaContainer: "mp4"
-                    videoRecorder.frameRate: 25
-                    videoRecorder.outputLocation: "\app\recodings"
-
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            if (cameraPage.photoMode) {
+                                CameraService.captureImage()
+                            } else {
+                                if (CameraService.recording)
+                                    CameraService.stopRecording()
+                                else
+                                    CameraService.startRecording()
+                            }
+                        }
+                    }
                 }
 
-                source: camera
-                fillMode: Qt.KeepAspectRatio
-                autoOrientation: true
+                Item { Layout.fillWidth: true }
 
+                // Settings gear
+                ToolButton {
+                    icon.source: "qrc:/images/svg/settings.svg"
+                    icon.color: "#FFFFFF"
+                    icon.width: 26; icon.height: 26
+                    background: null
+                    onClicked: settingsDrawer.open()
+                }
 
+                Item { Layout.preferredWidth: 16 }
+            }
+
+            Item { Layout.fillHeight: true }
+        }
+    }
+
+    // ── Camera settings drawer ──
+    Drawer {
+        id: settingsDrawer
+        edge: Qt.BottomEdge
+        width: parent.width
+        height: Math.min(400, cameraPage.height * 0.5)
+
+        background: Rectangle {
+            color: Theme.surface
+            radius: Theme.radiusSheet
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: Theme.radiusSheet
+                color: Theme.surface
             }
         }
-    }
-    toolbarButtons: ColumnLayout {
 
-    RoundButton
-    {
-        id: savePicture
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 12
 
-        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-        Layout.preferredHeight:  Style.roundButtonHeight
-        Layout.preferredWidth:   Style.roundButtonWidth
-        icon.source:"qrc:/images/png/save_photo.png"
-        icon.width :Style.roundButtonWidth -15
-        icon.height:Style.roundButtonHeight
-        background: Rectangle {
-            radius: Style.roundButtonRadius
-            color: Style.roundButtonGreen
+            Rectangle {
+                Layout.alignment: Qt.AlignHCenter
+                width: 36; height: 5
+                radius: 3
+                color: Theme.fill
+            }
+
+            Label {
+                text: qsTr("Camera Settings")
+                font.pointSize: Theme.headline
+                font.weight: Font.DemiBold
+                color: Theme.label
+            }
+
+            Label { text: qsTr("Device"); font.pointSize: Theme.footnote; color: Theme.secondaryLabel }
+            ComboBox {
+                Layout.fillWidth: true
+                model: CameraService.availableCameras
+                currentIndex: CameraService.currentCameraIndex
+                onActivated: function(idx) { CameraService.currentCameraIndex = idx }
+            }
+
+            Label { text: qsTr("Resolution"); font.pointSize: Theme.footnote; color: Theme.secondaryLabel }
+            ComboBox {
+                Layout.fillWidth: true
+                model: CameraService.availableFormats
+                currentIndex: CameraService.currentFormatIndex
+                onActivated: function(idx) { CameraService.currentFormatIndex = idx }
+            }
+
+            Label { text: qsTr("Processors"); font.pointSize: Theme.footnote; color: Theme.secondaryLabel }
+
+            ListView {
+                id: processorList
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: pluginModel
+                spacing: 4
+                delegate: RowLayout {
+                    width: processorList.width
+                    spacing: 8
+                    Column {
+                        Layout.fillWidth: true
+                        Label { text: name; font.pointSize: Theme.body; color: Theme.label }
+                        Label { text: description; font.pointSize: Theme.caption; color: Theme.secondaryLabel; wrapMode: Text.WordWrap }
+                    }
+                    Switch {
+                        checked: model.enabled
+                        onToggled: pluginModel.setEnabled(index, checked)
+                    }
+                }
+                Label {
+                    anchors.centerIn: parent
+                    visible: processorList.count === 0
+                    text: qsTr("No processors installed")
+                    color: Theme.secondaryLabel
+                }
+            }
         }
-
-
-        onClicked: {
-            cameraProcessor.captureImage()
-//            var url = cameraProcessor.getURL()
-//            console.log("albumm url", url)
-        }
-
-    }
-    // Recording will be added later!!!!!
-
-//    RoundButton
-//    {
-//        id: recordMovie
-//        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-//        Layout.preferredHeight:  65
-//        Layout.preferredWidth:   65
-//        background: Image {
-//            source: "qrc:/images/png/record.png"
-//            width: 65
-//            height: 65
-//            smooth: true
-//        }
-
-
-//        onClicked: {
-//            console.log("Record")
-//            //cameraProcessor.recordMovie()
-//        }
-
-//    }
-//    RoundButton
-//    {
-//        id: stopRecording
-//        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-//        Layout.preferredHeight:  65
-//        Layout.preferredWidth:   65
-//        background: Image {
-//            source: "qrc:/images/png/stop_recording.png"
-//            width: 65
-//            height: 65
-//            smooth: true
-//        }
-
-
-//        onClicked: {
-//            console.log("stop recording")
-//            cameraProcessor.stopRecording()
-//        }
-
-//    }
     }
 }

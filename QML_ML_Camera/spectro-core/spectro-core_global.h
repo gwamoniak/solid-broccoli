@@ -1,0 +1,12 @@
+#ifndef SPECTROCORE_GLOBAL_H
+#define SPECTROCORE_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(SPECTROCORE_LIBRARY)
+#  define SPECTROCORE_EXPORT Q_DECL_EXPORT
+#else
+#  define SPECTROCORE_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // SPECTROCORE_GLOBAL_H

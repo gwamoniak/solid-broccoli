@@ -30,3 +30,22 @@
 *.exe
 *.out
 *.app
+
+# CMake and local runtime output
+build/
+QML_ML_Camera/build/
+logs/
+*.db
+.DS_Store
+
+# Model weights are never committed (ExecPlan rule); import/choose them in the app
+*.onnx
+*.pt
+*.gguf
+
+# qmake generated files
+.qmake.stash
+*.pro.user
+Makefile
+Makefile.Debug
+Makefile.Release

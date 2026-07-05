@@ -1,85 +1,70 @@
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.4
-import QtQuick.Dialogs 1.2
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import "."
 
 
-Dialog{
-    id:rootDialog
+Dialog {
+    id: rootDialog
     property string label: "New item"
     property string hint: "value"
     property alias editText: editTextItem
-    width:  800
-    height: 400
+
+    modal: true
+    width: Math.min(520, parent ? parent.width - 64 : 520)
+    height: 220
+    anchors.centerIn: parent
+    standardButtons: Dialog.NoButton
 
     onVisibleChanged: {
-        editTextItem.focus = true
-        //editTextItem.selectAll()
+        if (visible) {
+            editTextItem.forceActiveFocus()
+            editTextItem.selectAll()
+        }
     }
 
-    Rectangle {
-        id: inputTextPanel
-        implicitWidth: parent.width
-        implicitHeight: parent.height/3
-        border.color: "white"
-        color: "black"
-        border.width: 0.5
+    background: Rectangle {
+        color: "#1f1f1f"
+        radius: 6
+        border.color: "#555555"
+    }
 
-        Layout.alignment: Qt.AlignCenter
-        ColumnLayout {
-            Text {
-                id: labelItem
-                text: label
-                color: Style.text
-                font.pointSize: 16
+    contentItem: ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 16
+
+        Label {
+            text: label
+            color: Style.text
+            font.pointSize: 16
+            Layout.fillWidth: true
+        }
+
+        TextField {
+            id: editTextItem
+            text: hint
+            color: Style.text
+            selectByMouse: true
+            font.pointSize: 18
+            Layout.fillWidth: true
+            inputMethodHints: Qt.ImhNone
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Item { Layout.fillWidth: true }
+
+            Button {
+                text: qsTr("Cancel")
+                onClicked: rootDialog.reject()
             }
 
-            TextInput {
-                id: editTextItem
-                inputMethodHints: Qt.ImhNone
-
-                text: hint
-                color: Style.text
-                font.pointSize: 20
+            Button {
+                text: qsTr("OK")
+                highlighted: true
+                onClicked: rootDialog.accept()
             }
         }
-
-
     }
-
-    RoundButton {
-        id: okButton
-        width:70
-        height:70
-        anchors.bottom: parent.bottom
-        x: rootDialog.width - width*1.4
-        Layout.alignment: Qt.AlignRight
-        text: "\u2713" // Unicode Character 'CHECK MARK'
-        onClicked: {
-            accepted()
-            rootDialog.close()
-        }
-    }
-
-
-    RoundButton {
-        id: cancelButton
-        width:70
-        height:70
-        anchors.bottom: parent.bottom
-        anchors.left: rootDialog.left
-        x: width/10
-        Layout.alignment: Qt.AlignLeft
-        text: "\u2716" // Unicode Character 'Cancel'
-        onClicked: {
-            rejected()
-            rootDialog.close()
-        }
-    }
-
-    standardButtons: StandardButton.NoButton
-
-
 }

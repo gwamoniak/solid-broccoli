@@ -20,13 +20,13 @@ static const int LOGFILES = 3;
 
 void LogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString& msg);
 
-const QString sLogFolderName = "logs";
-
 class LOGGERCORESHARED_EXPORT Logger
 {
 
 public:
-    bool InitLogger();
+    // logDir must be an absolute, existing directory; the caller owns
+    // the location policy (the app passes StorageLocations::logsDir()).
+    bool InitLogger(const QString& logDir);
 
     void InitLogFile();
     void DeleteOldLogs();

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>solid-broccoli — systems schematic</title>
+<style>
+  /* Palette = QML_ML_Camera/app/Theme.qml, verbatim. */
+  :root {
+    --bg:        #0E0E10;
+    --surface:   #1A1A1D;
+    --elevated:  #242428;
+    --label:     #F2F2F2;
+    --secondary: #98989F;
+    --tertiary:  #5A5A60;
+    --separator: #2C2C30;
+    --accent:    #FFE100;
+    --live:      #30D158;
+    --ref:       #64D2FF;
+    --warn:      #FF453A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--label);
+    font: 15px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family: Menlo, Consolas, monospace; }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--separator);
+    padding: 14px 24px 10px;
+  }
+  .micro {
+    font-family: Menlo, monospace;
+    font-size: 11px; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--secondary);
+  }
+  h1 { margin: 2px 0 8px; font-size: 21px; font-weight: 650; }
+  h1 .dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--live); margin-right: 9px; vertical-align: 2px;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .35; } }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  nav a {
+    font-family: Menlo, monospace; font-size: 11px; letter-spacing: .6px;
+    color: var(--secondary); text-decoration: none;
+    border: 1px solid var(--separator); border-radius: 999px;
+    padding: 3px 10px; background: var(--bg);
+  }
+  nav a:hover { color: var(--accent); border-color: var(--accent); }
+  main { max-width: 1060px; margin: 0 auto; padding: 22px 24px 80px; }
+  .banner {
+    border: 1px solid var(--separator); border-left: 3px solid var(--accent);
+    background: var(--surface); border-radius: 10px;
+    padding: 10px 16px; font-size: 13.5px; color: var(--secondary);
+    margin-bottom: 26px;
+  }
+  .banner b { color: var(--label); }
+  .banner a, section p a { color: var(--ref); text-decoration: none; }
+  section {
+    background: var(--surface);
+    border: 1px solid var(--separator); border-radius: 12px;
+    padding: 18px 22px 10px; margin-bottom: 26px;
+    scroll-margin-top: 110px;
+  }
+  section h2 { margin: 0 0 2px; font-size: 17px; font-weight: 650; }
+  section h2 .idx { color: var(--accent); font-family: Menlo, monospace; margin-right: 10px; font-size: 14px; }
+  section > p { color: var(--secondary); font-size: 14px; margin: 6px 0 14px; }
+  section > p code, .banner code {
+    font-family: Menlo, monospace; font-size: 12.5px;
+    background: var(--elevated); border-radius: 5px; padding: 1px 5px; color: var(--label);
+  }
+  pre.mermaid {
+    background: var(--bg);
+    border: 1px solid var(--separator); border-radius: 10px;
+    padding: 14px; overflow-x: auto; text-align: center;
+    color: var(--tertiary); font-size: 12px; /* visible as source until rendered */
+  }
+  footer { text-align: center; color: var(--tertiary); font-size: 12.5px; padding-bottom: 40px; }
+  footer .micro { color: var(--tertiary); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="micro">solid-broccoli &middot; systems schematic &middot; rev matches docs/ARCHITECTURE.md</div>
+  <h1><span class="dot"></span>Tricorder Architecture</h1>
+  <nav>
+    <a href="#targets">01 targets</a>
+    <a href="#stack">02 device stack</a>
+    <a href="#flow">03 sensor flow</a>
+    <a href="#vision">04 camera/vision</a>
+    <a href="#db">05 persistence</a>
+    <a href="#ai">06 ai reports</a>
+    <a href="#threads">07 threading</a>
+  </nav>
+</header>
+
+<main>
+
+<div class="banner" id="cdn-note">
+  <b>Canonical source:</b> <a href="ARCHITECTURE.md">ARCHITECTURE.md</a> — this page mirrors its
+  diagrams with the instrument's own theme. Rendering uses the Mermaid CDN; offline you will see
+  diagram source text instead (still correct, just undressed).
+</div>
+
+<section id="targets">
+  <h2><span class="idx">01</span>Build targets</h2>
+  <p>Nine CMake targets. Solid arrows are link-time dependencies; dashed are optional or
+     runtime-only. <code>ai-core</code> and <code>objectdetect-processor</code> may be absent —
+     the bare machine still builds and tests green.</p>
+  <pre class="mermaid">
+flowchart BT
+    logger["logger-core&lt;br/&gt;shared - CSV logging via Qt categories"]
+    papi["processor-api&lt;br/&gt;interface - FrameProcessor v1.1 + Detection"]
+    spectro["spectro-core&lt;br/&gt;shared - analysis math, device stack, codecs, BLE"]
+    sim["spectro-sim&lt;br/&gt;shared - physics synthesis, noise model, fault injection"]
+    camera["camera-core&lt;br/&gt;shared - SQLite, DAOs, list models, storage paths"]
+    ai["ai-core&lt;br/&gt;static - AiAnalyst over llama.cpp b6100"]
+    gray["grayscale-processor&lt;br/&gt;plugin module"]
+    det["objectdetect-processor&lt;br/&gt;plugin module - YOLO via ONNX Runtime"]
+    app["QML_ML_Camera_App&lt;br/&gt;services, QML shell, pipeline composition"]
+
+    spectro --> logger
+    sim --> spectro
+    camera --> logger
+    camera --> spectro
+    gray --> papi
+    det --> papi
+    det --> logger
+    ai --> logger
+    app --> camera
+    app --> spectro
+    app --> sim
+    app --> papi
+    app --> logger
+    app -. "only when AI_ANALYST=ON" .-> ai
+    app -. "QPluginLoader, runtime" .-> gray
+    app -. "QPluginLoader, runtime" .-> det
+
+    classDef optional stroke-dasharray: 5 5;
+    class ai,det optional;
+  </pre>
+</section>
+
+<section id="stack">
+  <h2><span class="idx">02</span>Sensor device stack (UML)</h2>
+  <p>Sensor-neutral below the service layer: transports move bytes, sans-IO codecs parse them,
+     one generic <code>CodecDevice</code> pairs them. A new modality = one codec + one semantic
+     subclass; Milestone 10 (Geiger) changed zero lines of this plumbing.</p>
+  <pre class="mermaid">
+classDiagram
+    class SensorTransport {
+        &lt;&lt;abstract&gt;&gt;
+        +open(errorMessage) bool
+        +close() void
+        +writeBytes(bytes) void
+        +bytesReceived(bytes) signal
+        +transportError(message) signal
+        +closed() signal
+    }
+    class ProtocolCodec {
+        &lt;&lt;abstract&gt;&gt;
+        +feed(bytes) void
+        +setSink(fn~SensorReading~) void
+        +encodeStart() QByteArray
+        +encodeStop() QByteArray
+        +encodeParams(AcquisitionParams) QByteArray
+    }
+    class SensorDevice {
+        &lt;&lt;abstract&gt;&gt;
+        +connectDevice(errorMessage) bool
+        +start() void
+        +stop() void
+        +setParams(AcquisitionParams) void
+        +spectrumReady(Spectrum) signal
+        +readingReady(GeigerReading) signal
+        +errorOccurred(message) signal
+    }
+    class CodecDevice {
+        pairs one transport with one codec
+    }
+    class SimulatedSpectrometer {
+        SimScene + InstrumentModel
+    }
+    class SimulatedGeiger {
+        seeded Poisson tube
+    }
+    class BleTransport {
+        QLowEnergyController central
+    }
+    class SimulatedBridgeTransport {
+        byte-level firmware impersonation
+    }
+    class BridgeFrameParser {
+        shared framing + byte-wise resync
+    }
+    class As7265xCodec {
+        frame type 0x01
+    }
+    class GeigerCodec {
+        frame type 0x02
+    }
+
+    SensorDevice <|-- SpectrometerDevice
+    SensorDevice <|-- GeigerDevice
+    SensorDevice <|-- CodecDevice
+    SpectrometerDevice <|-- SimulatedSpectrometer
+    GeigerDevice <|-- SimulatedGeiger
+    SensorTransport <|-- BleTransport
+    SensorTransport <|-- ScriptedTransport
+    SensorTransport <|-- SimulatedBridgeTransport
+    ProtocolCodec <|-- As7265xCodec
+    ProtocolCodec <|-- GeigerCodec
+    CodecDevice o-- SensorTransport
+    CodecDevice o-- ProtocolCodec
+    As7265xCodec *-- BridgeFrameParser
+    GeigerCodec *-- BridgeFrameParser
+  </pre>
+</section>
+
+<section id="flow">
+  <h2><span class="idx">03</span>Sensor data flow</h2>
+  <p>Real hardware and the simulated bridge speak the identical byte contract into the identical
+     parse path — the loopback device is the executable specification of the future firmware.</p>
+  <pre class="mermaid">
+flowchart LR
+    subgraph BYTES["byte sources - one contract"]
+        HW["ESP32 bridge&lt;br/&gt;AS7265x / Geiger tube"]
+        SIMB["SimulatedBridgeTransport&lt;br/&gt;SimScene, MTU-20, FaultPolicy"]
+    end
+    subgraph OBJ["object-level simulators"]
+        SIMS["SimulatedSpectrometer"]
+        SIMG["SimulatedGeiger"]
+    end
+    BLE["BleTransport"]
+    PARSE["BridgeFrameParser"]
+    C1["As7265xCodec - 0x01"]
+    C2["GeigerCodec - 0x02"]
+    CD1["CodecDevice"]
+    CD2["CodecDevice"]
+    SVC1["SpectrometerService&lt;br/&gt;smoothing, T/A, peaks, integral"]
+    SVC2["GeigerService&lt;br/&gt;rolling CPM, dose, alert"]
+    UI1["SpectrumView + PeakListModel"]
+    UI2["StripChartView"]
+    DB[("SQLite")]
+
+    HW -- "GATT notify" --> BLE --> PARSE
+    SIMB --> PARSE
+    PARSE --> C1 --> CD1
+    PARSE --> C2 --> CD2
+    CD1 -- "spectrumReady" --> SVC1
+    CD2 -- "readingReady" --> SVC2
+    SIMS -- "spectrumReady" --> SVC1
+    SIMG -- "readingReady" --> SVC2
+    SVC1 --> UI1
+    SVC2 --> UI2
+    SVC1 -- "saveCapture" --> DB
+    SVC2 -- "saveMeasurement" --> DB
+  </pre>
+</section>
+
+<section id="vision">
+  <h2><span class="idx">04</span>Camera &amp; vision pipeline</h2>
+  <p>One plugin interface, three jobs: filters, instrumentation overlay, ML detection.
+     Inference is decoupled — every Nth frame on a pool thread, freshest boxes drawn on every
+     frame, so the preview never blocks on the model.</p>
+  <pre class="mermaid">
+flowchart LR
+    CAM["QCamera"] --> SESSN["QMediaCaptureSession"]
+    SESSN --> TAP["QVideoSink tap"]
+    TAP --> W["FrameProcessingWorker&lt;br/&gt;camera worker thread"]
+    subgraph CHAIN["FrameProcessor chain"]
+        G["Grayscale"]
+        D["ObjectDetection&lt;br/&gt;draws latest boxes"]
+        O["SpectrumOverlay&lt;br/&gt;trace + peak + dose"]
+        G --> D --> O
+    end
+    W --> G
+    O --> OUT["display QVideoSink"] --> VO["VideoOutput"]
+
+    D -. "every Nth frame" .-> POOL["QThreadPool&lt;br/&gt;ORT: letterbox, decode, NMS"]
+    POOL -. "latest detections" .-> D
+    D -. "QVariantMap, queued" .-> DM["DetectionModel"]
+
+    SESSN --> IC["QImageCapture"] --> CC["CaptureCoordinator"] --> PM["PictureModel"]
+    SESSN --> REC["QMediaRecorder"] --> SV["SessionDAO.addVideo"]
+  </pre>
+</section>
+
+<section id="db">
+  <h2><span class="idx">05</span>Persistence</h2>
+  <p>One SQLite file under the platform app-data root. Cascades are explicit in DAO code;
+     spectra store raw float64 blobs; <code>reports.context_json</code> keeps every AI report
+     auditable.</p>
+  <pre class="mermaid">
+erDiagram
+    albums ||--o{ pictures : contains
+    albums ||--o{ movies : contains
+    sessions ||--o{ spectra : "captures"
+    sessions ||--o{ session_videos : "documents"
+    sessions ||--o{ measurements : "scalar series"
+    sessions ||--o{ reports : "AI narratives"
+
+    albums {
+        INTEGER id PK
+        TEXT name
+    }
+    pictures {
+        INTEGER id PK
+        INTEGER album_id FK
+        TEXT url
+    }
+    movies {
+        INTEGER id PK
+        INTEGER album_id FK
+        TEXT url
+        TEXT name
+        INTEGER duration
+        TEXT created_at
+    }
+    sessions {
+        INTEGER id PK
+        TEXT name
+        TEXT created_utc
+        TEXT notes
+    }
+    spectra {
+        INTEGER id PK
+        INTEGER session_id FK
+        TEXT kind
+        TEXT name
+        TEXT created_utc
+        INTEGER integration_ms
+        INTEGER averaging
+        BLOB wavelengths
+        BLOB counts
+        TEXT tags
+    }
+    session_videos {
+        INTEGER id PK
+        INTEGER session_id FK
+        TEXT filepath
+        INTEGER duration_ms
+    }
+    measurements {
+        INTEGER id PK
+        INTEGER session_id FK
+        TEXT created_utc
+        TEXT type
+        REAL value
+        TEXT unit
+        TEXT summary
+    }
+    reports {
+        INTEGER id PK
+        INTEGER session_id FK
+        TEXT created_utc
+        TEXT model_name
+        TEXT prompt_version
+        TEXT context_json
+        TEXT content_md
+    }
+  </pre>
+</section>
+
+<section id="ai">
+  <h2><span class="idx">06</span>AI report generation</h2>
+  <p>Grounding first, language second: deterministic code produces every factual claim, the
+     model narrates an immutable match table, and the exact input JSON is stored with the
+     report. Greedy sampling, pinned llama.cpp, versioned prompt.</p>
+  <pre class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant P as SessionDetailPage.qml
+    participant R as ReportService
+    participant B as ReportContextBuilder
+    participant M as PeakMatcher
+    participant A as AiAnalyst worker
+    participant D as ReportDAO
+
+    U->>P: Generate AI report
+    P->>R: generateReport(sessionId)
+    R->>B: build(session, spectra, measurements, detections)
+    B->>M: match peaks vs reference library
+    M-->>B: ranked candidates
+    B-->>R: context JSON
+    R->>A: lazy loadModel, then generate(prompt + context)
+    loop token stream
+        A-->>P: tokenGenerated
+    end
+    A-->>R: generationFinished(markdown)
+    R->>D: addReport(context_json + content_md)
+    R-->>P: reportSaved
+  </pre>
+</section>
+
+<section id="threads">
+  <h2><span class="idx">07</span>Threading map</h2>
+  <p>SQLite only on the GUI thread; frame processing on the camera worker; inference on the
+     pool; llama.cpp on its own thread. Cross-thread traffic = mutexed snapshots one way,
+     queued signals the other.</p>
+  <pre class="mermaid">
+flowchart TB
+    subgraph GUI["GUI thread"]
+        QML["QML scene"]
+        SRV["Services"]
+        SQL[("SQLite")]
+        BT["BleTransport"]
+    end
+    subgraph CW["camera worker thread"]
+        FP["FrameProcessor chain"]
+    end
+    subgraph TP["QThreadPool"]
+        ORT["ONNX inference"]
+    end
+    subgraph AIT["AI worker thread"]
+        LL["llama.cpp token loop"]
+    end
+
+    SRV -- "mutexed snapshots" --> FP
+    FP -- "queued QVariantMap" --> GUI
+    ORT -- "latest boxes, busy flag" --> FP
+    LL -- "queued token signals" --> GUI
+  </pre>
+</section>
+
+<footer>
+  <div class="micro">solid-broccoli &middot; generated with the docs milestone &middot; canonical: docs/ARCHITECTURE.md</div>
+</footer>
+
+</main>
+
+<script type="module">
+  try {
+    const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        darkMode: true,
+        background: '#0E0E10',
+        primaryColor: '#1A1A1D',
+        primaryTextColor: '#F2F2F2',
+        primaryBorderColor: '#3A3A3F',
+        secondaryColor: '#242428',
+        tertiaryColor: '#242428',
+        lineColor: '#98989F',
+        noteBkgColor: '#242428',
+        noteTextColor: '#F2F2F2',
+        actorBkg: '#1A1A1D',
+        actorTextColor: '#F2F2F2',
+        actorLineColor: '#5A5A60',
+        signalColor: '#98989F',
+        signalTextColor: '#F2F2F2',
+        labelBoxBkgColor: '#242428',
+        labelTextColor: '#F2F2F2',
+        loopTextColor: '#FFE100',
+        attributeBackgroundColorEven: '#1A1A1D',
+        attributeBackgroundColorOdd: '#242428',
+        fontFamily: 'Menlo, Consolas, monospace',
+        fontSize: '13px'
+      }
+    });
+    await mermaid.run({ querySelector: 'pre.mermaid' });
+  } catch (e) {
+    console.error('mermaid failed:', e);
+    document.getElementById('cdn-note').innerHTML =
+      '<b>Offline:</b> the Mermaid CDN is unreachable, so diagrams are shown as their source ' +
+      'text. The canonical, always-readable version is <a href="ARCHITECTURE.md">ARCHITECTURE.md</a>.';
+  }
+</script>
+</body>
+</html>

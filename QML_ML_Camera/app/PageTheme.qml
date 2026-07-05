@@ -1,77 +1,51 @@
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
-import QtMultimedia 5.8
-import Qt.labs.settings 1.0
-import solid.broccoli 1.0
-import QtQuick.Controls.Material 2.2
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import "."
 
-Page{
+Page {
     id: page
-    background: Rectangle {
-        width: parent.width
-        height: parent.height
-        color: Style.pageBackground
-    }
+    clip: true
 
     property alias toolbarButtons: buttonsLoader.sourceComponent
     property alias toolbarTitle: titleLabel.text
 
-footer: RoundButton{
-        id: homeButton
-        width: 70
-        height: 70
-        //x: parent.width/2.2
-
-        anchors.bottom: parent.bottom
-        Layout.alignment: Qt.AlignBottom| Qt.AlignCenter
-        Layout.preferredHeight:  70
-        Layout.preferredWidth:   70
-        icon.source:"qrc:/images/png/home_button.png"
-        icon.width :Style.roundButtonWidth
-        icon.height:Style.roundButtonHeight
-        background: Rectangle {
-            radius: Style.roundButtonRadius
-            color: Style.roundButtonHome
-        }
-
-        onClicked: {
-            pageStack.push("qrc:/MainPage.qml")
-      }
+    background: Rectangle {
+        color: Style.pageBackground
     }
 
-    header: ToolBarTheme{
+    header: ToolBarTheme {
         id: toolBarTheme
-
-        Layout.alignment: Qt.AlignRight
+        height: 86
 
         Label {
             id: titleLabel
-            anchors.horizontalCenter: parent.horizontalCenter
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignRight |Qt.AlignHCenter
-            color: (PicturePage) ?  Style.pictureText :  Style.text
+            anchors.centerIn: parent
+            color: Style.text
             elide: Text.ElideRight
             font.pointSize: 20
-
+            horizontalAlignment: Text.AlignHCenter
+            width: parent.width - (Style.roundButtonWidth + 24) * 2
         }
 
-
-        ColumnLayout{
-            id: rightPanel
+        ColumnLayout {
             anchors.right: parent.right
-            width: parent.width /13
-            height: parent.height
+            anchors.top: parent.top
+            anchors.topMargin: 8
+            anchors.rightMargin: 8
             spacing: 5
+            width: Style.roundButtonWidth
+            z: 10
+
             RoundButton {
                 id: backButton
-                Layout.preferredHeight:  Style.roundButtonHeight
-                Layout.preferredWidth:   Style.roundButtonWidth
-                Layout.alignment: Qt.AlignRight| Qt.AlignTop
-                icon.source:"qrc:/images/png/back.png"
-                icon.width :Style.roundButtonWidth
-                icon.height:Style.roundButtonHeight
+                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                Layout.preferredHeight: Style.roundButtonHeight
+                Layout.preferredWidth: Style.roundButtonWidth
+                icon.source: "qrc:/images/svg/back.svg"
+                icon.color: Style.iconColor
+                icon.width: Style.iconSize
+                icon.height: Style.iconSize
                 background: Rectangle {
                     radius: Style.roundButtonRadius
                     color: Style.buttonBackground
@@ -80,33 +54,44 @@ footer: RoundButton{
                 onClicked: {
                     if (stackView.depth > 1) {
                         stackView.pop()
+                    } else {
+                        window.goHome()
                     }
-
                 }
+            }
 
-                Loader {
-                    anchors.top: backButton.bottom
-                    id: buttonsLoader
-                }
-
+            Loader {
+                id: buttonsLoader
+                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                Layout.preferredWidth: Style.roundButtonWidth
+                clip: true
             }
         }
-        Rectangle {
-            color: Style.pageBackground
-            anchors.fill: parent
-        }
-
     }
 
+    footer: ToolBar {
+        height: 74
+        background: Rectangle {
+            color: Style.toolBackground
+        }
 
+        RoundButton {
+            id: homeButton
+            width: Style.roundButtonWidth
+            height: Style.roundButtonHeight
+            anchors.centerIn: parent
+            icon.source: "qrc:/images/svg/home.svg"
+            icon.color: Style.iconColor
+            icon.width: Style.iconSize
+            icon.height: Style.iconSize
+            background: Rectangle {
+                radius: Style.roundButtonRadius
+                color: Style.roundButtonHome
+            }
+
+            onClicked: {
+                window.goHome()
+            }
+        }
+    }
 }
-
-
-
-
-
-
-/*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}
-}
- ##^##*/

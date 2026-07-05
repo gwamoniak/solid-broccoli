@@ -8,9 +8,9 @@
 
 using namespace std;
 
-PictureModel::PictureModel(const AlbumModel& _albumModel, QObject* parent) :
+PictureModel::PictureModel(DatabaseManager& db, const AlbumModel& _albumModel, QObject* parent) :
     QAbstractListModel(parent),
-    m_sqlDB(DatabaseManager::instance()),
+    m_sqlDB(db),
     m_nAlbumID(-1),
     m_vPictures(new vector<unique_ptr<Picture>>())
 {
@@ -36,6 +36,21 @@ void PictureModel::addPictureFromUrl(const QUrl& _FileUrl)
 {
     addPicture(Picture(_FileUrl));
     qDebug(logDebug()) << "Picture name: " << _FileUrl.toString();
+}
+
+void PictureModel::addPictureToAlbum(int _nAlbumID, const QUrl& _FileUrl)
+{
+    // The loaded album: reuse addPicture so the gallery updates live.
+    if (_nAlbumID == m_nAlbumID) {
+        addPicture(Picture(_FileUrl));
+        return;
+    }
+    // A different album: insert straight through the DAO, leaving the
+    // currently loaded album's rows untouched.
+    Picture picture(_FileUrl);
+    m_sqlDB.m_pictureDao.addPictureInAlbum(_nAlbumID, picture);
+    qDebug(logInfo()) << "Picture filed into album" << _nAlbumID << ":"
+                      << _FileUrl.toString();
 }
 
 void PictureModel::rename(int row, const QString &_name)

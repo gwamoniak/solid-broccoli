@@ -3,9 +3,9 @@
 
 using namespace std;
 
-AlbumModel::AlbumModel(QObject* parent) :
+AlbumModel::AlbumModel(DatabaseManager& db, QObject* parent) :
     QAbstractListModel(parent),
-    m_sqlDB(DatabaseManager::instance()),
+    m_sqlDB(db),
     m_vAlbums(m_sqlDB.m_albumDao.albums())
 {
         qDebug(logInfo()) << "Album has been created!";
@@ -27,6 +27,35 @@ void AlbumModel::addAlbumFromName(const QString& _name)
 {
     addAlbum(Album(_name));
     qDebug(logInfo()) << "Album name is: " << _name;
+}
+
+int AlbumModel::createAlbumReturningId(const QString& _name)
+{
+    const QModelIndex idx = addAlbum(Album(_name));
+    return data(idx, DBRoles::IdRole).toInt();
+}
+
+int AlbumModel::albumCount() const
+{
+    return static_cast<int>(m_vAlbums->size());
+}
+
+int AlbumModel::albumIdAt(int row) const
+{
+    if (row < 0 || row >= static_cast<int>(m_vAlbums->size())) {
+        return -1;
+    }
+    return m_vAlbums->at(row)->_nAlbumID();
+}
+
+QString AlbumModel::albumNameForId(int _nAlbumID) const
+{
+    for (const auto& album : *m_vAlbums) {
+        if (album->_nAlbumID() == _nAlbumID) {
+            return album->_sAlbumName();
+        }
+    }
+    return QString();
 }
 
 void AlbumModel::rename(int row, const QString& _name)

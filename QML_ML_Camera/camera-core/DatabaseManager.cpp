@@ -1,12 +1,20 @@
 #include "DatabaseManager.h"
+#include "StorageLocations.h"
 #include "logger.h"
 
+#include <QAtomicInt>
 #include <QSqlDatabase>
 #include <QDebug>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QFile>
-#include <QStandardPaths>
+
+namespace {
+QString nextConnectionName()
+{
+    static QAtomicInt counter(0);
+    return QStringLiteral("solidbroccoli_%1").arg(counter.fetchAndAddRelaxed(1));
+}
+}
 
 void DatabaseManager::debugQuery(const QSqlQuery& _query)
 {
@@ -18,32 +26,53 @@ void DatabaseManager::debugQuery(const QSqlQuery& _query)
     }
 }
 
-DatabaseManager& DatabaseManager::instance()
+QString DatabaseManager::defaultDatabasePath()
 {
-    static DatabaseManager singleton; // call it once
-
-    return singleton;
+    return StorageLocations::databasePath();
 }
 
 DatabaseManager::DatabaseManager(const QString& _path) :
-    m_sqlDataBase(new QSqlDatabase(QSqlDatabase::addDatabase("QSQLITE"))),
-    m_albumDao(*m_sqlDataBase),  
-    m_pictureDao(*m_sqlDataBase),   
-    m_loggerDao(*m_sqlDataBase)
+    m_connectionName(nextConnectionName()),
+    m_sqlDataBase(std::make_unique<QSqlDatabase>(
+        QSqlDatabase::addDatabase("QSQLITE", m_connectionName))),
+    m_albumDao(*m_sqlDataBase),
+    m_pictureDao(*m_sqlDataBase),
+    m_loggerDao(*m_sqlDataBase),
+    m_movieDao(*m_sqlDataBase),
+    m_sessionDao(*m_sqlDataBase),
+    m_spectrumDao(*m_sqlDataBase),
+    m_measurementDao(*m_sqlDataBase),
+    m_reportDao(*m_sqlDataBase)
 {
     m_sqlDataBase->setDatabaseName(_path);
 
     bool openStatus = m_sqlDataBase->open();
-    qDebug(logInfo) << "Database connection: " << (openStatus ? "OK" : "Error");
+    qDebug(logInfo) << "Database connection:" << _path
+                    << (openStatus ? "OK" : "Error");
 
-    m_albumDao.init();   
-    m_pictureDao.init();   
+    m_albumDao.init();
+    m_pictureDao.init();
     m_loggerDao.init();
+    m_movieDao.init();
+    m_sessionDao.init();
+    m_spectrumDao.init();
+    m_measurementDao.init();
+    m_reportDao.init();
 }
 
 DatabaseManager::~DatabaseManager()
 {
     m_sqlDataBase->close();
+    m_sqlDataBase.reset();
+    QSqlDatabase::removeDatabase(m_connectionName);
 }
 
+bool DatabaseManager::isOpen() const
+{
+    return m_sqlDataBase && m_sqlDataBase->isOpen();
+}
 
+QSqlDatabase& DatabaseManager::database()
+{
+    return *m_sqlDataBase;
+}
