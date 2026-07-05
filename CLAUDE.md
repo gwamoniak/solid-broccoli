@@ -6,14 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **solid-broccoli** is a Qt6/QML tricorder-style multi-sensor instrument: live spectroscopy (simulated instruments + BLE bridge path), a Geiger-counter modality, a SQLite lab notebook (sessions, captures, measurements, reports), a documentation camera with photo/video albums and a spectrum-overlay recorder, an optional ONNX object-detection plugin, and an optional on-device AI report generator (llama.cpp + Gemma). The full architecture is documented in `docs/ARCHITECTURE.md` (canonical, Mermaid) — read it before structural changes; `docs/USER_MANUAL.md` describes behavior from the user's side.
 
-## Current development status (2026-07-05 — authoritative detail lives in the ExecPlan's Progress section)
+## Current development status (2026-07-05 — authoritative detail lives in the active plan's Progress section)
 
-Active branch: `dev_modern_update`. The spectroscopy ExecPlan's desktop scope is **complete**: Milestones 1–10, 12, 13 shipped and committed; the suite stands at 21 test executables, all green. Open items:
+Active branch: `dev_modern_update`. **Active plan: `SPECTRO_FIELD_READINESS_EXECPLAN.md`.** Its predecessor `SPECTRO_TRICORDER_EXECPLAN.md` is closed as complete (Revision 5): the desktop product is done — Milestones 1–10 and 12–14 shipped, 21 test executables green, bare-machine builds verified. Everything still open lives in the field-readiness plan, and every one of its milestones is gated:
 
-- **Milestone 11 (Android)** — gated: do NOT start without a Qt for Android kit (Qt 6.11 Android, JDK, SDK/NDK) and a physical tablet.
-- **Hardware acceptances** (M9: real ESP32+AS7265x bridge; M10: real Geiger tube) — gated on equipment being on the desk.
-- **Model acceptances** (M12: YOLO `.onnx` imported in Settings → VISION; M13: Gemma GGUF chosen in Settings → AI) — user-side verification steps.
-- **Improvement backlog** — ten recorded candidates in `SPECTRO_TRICORDER_EXECPLAN.md` § "Improvement backlog from the Revision 4 reflection" (app-core library, CI, QML boot smoke test, in-app Help, parser fuzzing, …). They are *recorded, not scheduled*: take one only when the maintainer asks.
+- **Milestone 1** — vision model field acceptance; gate: a downloaded YOLO `.onnx` (Settings → VISION → Import).
+- **Milestone 2** — AI analyst field acceptance; gate: a downloaded Gemma `.gguf` (Settings → AI → Choose).
+- **Milestone 3** — live hardware over BLE; gate: an ESP32 bridge with AS7265x and/or a Geiger tube on the desk (wire contract embedded in the plan and in `BridgeContract.h`).
+- **Milestone 4** — Android tablet bring-up; gate: Qt for Android kit + physical tablet. Do NOT start without both.
+- **Hardening backlog** — ten recorded candidates (app-core library, CI, QML boot smoke test, in-app Help, parser fuzzing, …), *recorded not scheduled*: take one only when the maintainer asks.
 
 ## Build
 
@@ -73,7 +74,7 @@ Key conventions (enforced, with rationale in `SPECTRO_TRICORDER_EXECPLAN.md`'s D
 
 ## ExecPlans (PLANS.md)
 
-Feature work in this repo uses "ExecPlan" design documents defined by `PLANS.md`. When implementing a non-trivial feature, read `PLANS.md` in full and author a self-contained ExecPlan markdown file before writing code. ExecPlans are living documents: update `Progress`, `Decision Log`, and `Surprises & Discoveries` at every stopping point, and commit at milestone boundaries with the milestone name in the message. The active plan is `SPECTRO_TRICORDER_EXECPLAN.md`.
+Feature work in this repo uses "ExecPlan" design documents defined by `PLANS.md`. When implementing a non-trivial feature, read `PLANS.md` in full and author a self-contained ExecPlan markdown file before writing code. ExecPlans are living documents: update `Progress`, `Decision Log`, and `Surprises & Discoveries` at every stopping point, and commit at milestone boundaries with the milestone name in the message. The active plan is `SPECTRO_FIELD_READINESS_EXECPLAN.md`; `SPECTRO_TRICORDER_EXECPLAN.md` is the closed desktop-scope record (rationale in its Decision Log, hard-won lessons in its Surprises & Discoveries).
 
 Four project subagents are defined in `.claude/agents/` for milestone work: `spectro-architect` (refines the next milestone against the tree before coding), `spectro-builder` (implements), `spectro-scientist` (tests and scientific validation), `spectro-reviewer` (reviews the milestone diff before commit). The plan is the single source of truth they defer to.
 

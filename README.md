@@ -31,7 +31,8 @@ zero hardware thanks to a physics-based simulation library.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture atlas: build targets, device-stack UML, data flows, ER schema, threading (Mermaid, canonical) |
 | [docs/architecture.html](docs/architecture.html) | The same diagrams as a styled standalone page |
 | [docs/USER_MANUAL.md](docs/USER_MANUAL.md) | Operating manual: workflows, settings, troubleshooting, data locations |
-| [SPECTRO_TRICORDER_EXECPLAN.md](SPECTRO_TRICORDER_EXECPLAN.md) | The living design document — every decision and its rationale |
+| [SPECTRO_FIELD_READINESS_EXECPLAN.md](SPECTRO_FIELD_READINESS_EXECPLAN.md) | The active plan: model/hardware field verification, Android bring-up, hardening backlog |
+| [SPECTRO_TRICORDER_EXECPLAN.md](SPECTRO_TRICORDER_EXECPLAN.md) | The closed desktop-scope design record — every decision and its rationale |
 
 ## Build
 

@@ -8,8 +8,10 @@ it needs internet access once for the Mermaid CDN). **When the two disagree,
 this file wins — update it first.**
 
 Companion documents: [USER_MANUAL.md](USER_MANUAL.md) (how to operate the app),
-[`SPECTRO_TRICORDER_EXECPLAN.md`](../SPECTRO_TRICORDER_EXECPLAN.md) (why every
-decision was made — the Decision Log is the extended commentary to this file).
+[`SPECTRO_TRICORDER_EXECPLAN.md`](../SPECTRO_TRICORDER_EXECPLAN.md) (the closed
+build record — its Decision Log is the extended commentary to this file), and
+[`SPECTRO_FIELD_READINESS_EXECPLAN.md`](../SPECTRO_FIELD_READINESS_EXECPLAN.md)
+(the active plan: what remains gated on models, hardware, and Android).
 
 ---
 
@@ -474,8 +476,9 @@ round-trip + cascade test. Old on-disk databases must upgrade in place.
 - `camera-core` is really *data-core* — it predates the instrument and keeps
   its name to avoid target churn (Decision Log, 2026-07-03).
 - DAOs are public members of `DatabaseManager` (`db.m_sessionDao…`);
-  encapsulation was traded for momentum. Candidate cleanup in the ExecPlan's
-  Revision 4 backlog.
+  encapsulation was traded for momentum. Candidate cleanup in the active
+  plan's hardening backlog
+  ([`SPECTRO_FIELD_READINESS_EXECPLAN.md`](../SPECTRO_FIELD_READINESS_EXECPLAN.md)).
 - Services and models under `app/` are compiled source-by-source into their
   tests instead of linked from a library; an `app-core` static library is the
   recorded fix (same backlog).
