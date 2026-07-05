@@ -1,30 +1,62 @@
 # solid-broccoli
 
-A Qt6/QML camera application with photo and video album management. It captures
-images and video from a USB/system camera, stores metadata in SQLite, and
-displays a QML gallery UI. The live preview can be transformed by runtime
-frame-processor plugins (a grayscale proof plugin ships in `plugins/grayscale/`;
-the interface is designed so OpenCV or deep-learning plugins can be added later
-without the application itself linking those libraries).
+A tricorder-style multi-sensor instrument for tablets and desktops, built with
+Qt 6/QML — dark instrument UI, one yellow accent, everything developable with
+zero hardware thanks to a physics-based simulation library.
+
+**What it does:**
+
+- **Spectroscopy** — live intensity-vs-wavelength plot at interactive frame
+  rates, dark/reference calibration, transmittance/absorbance, peak detection
+  and labeling, region integration; simulated instruments (mercury lamp,
+  Beer-Lambert dye sample) plus a BLE bridge path for real hardware
+  (ESP32 + AS7265x).
+- **Radiation** — Geiger-counter modality: live dose rate (µSv/h), rolling
+  CPM, scrolling strip chart with alert threshold, honest Poisson statistics
+  in simulation.
+- **Lab notebook** — sessions in SQLite: tagged spectral captures, dose
+  measurements, linked videos; CSV/JSON export.
+- **Documentation camera** — photos and video with the live spectrum and dose
+  burned into recordings; runtime frame-processor plugins.
+- **Object detection** *(optional)* — YOLO via ONNX Runtime on the live
+  preview, decoupled from the render loop.
+- **On-device AI reports** *(optional)* — Gemma via llama.cpp writes session
+  summaries grounded in deterministic peak identification; every report
+  stores its exact input facts for audit. No cloud, no telemetry.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture atlas: build targets, device-stack UML, data flows, ER schema, threading (Mermaid, canonical) |
+| [docs/architecture.html](docs/architecture.html) | The same diagrams as a styled standalone page |
+| [docs/USER_MANUAL.md](docs/USER_MANUAL.md) | Operating manual: workflows, settings, troubleshooting, data locations |
+| [SPECTRO_TRICORDER_EXECPLAN.md](SPECTRO_TRICORDER_EXECPLAN.md) | The living design document — every decision and its rationale |
 
 ## Build
 
-The project uses CMake. From the repository root:
+CMake + Qt 6.5 or newer (Core, Gui, Qml, Quick, QuickControls2, Sql, Svg,
+Multimedia, Bluetooth, Test). From the repository root:
 
     cmake -S QML_ML_Camera -B QML_ML_Camera/build
-    cmake --build QML_ML_Camera/build
+    cmake --build QML_ML_Camera/build -j
 
 Run the app:
 
     ./QML_ML_Camera/build/app/QML_ML_Camera_App.app/Contents/MacOS/QML_ML_Camera_App
 
-Run the unit-test suite (from the build directory):
+Run the test suite:
 
-    cd QML_ML_Camera/build
-    ctest --output-on-failure
+    ctest --test-dir QML_ML_Camera/build --output-on-failure
 
-**Dependencies:** Qt 6.5+ (Core, Gui, Qml, Quick, Sql, Svg, Multimedia, Test).
-There is no OpenCV dependency in the current codebase.
+**A bare machine builds green.** ONNX Runtime, llama.cpp, and model weights
+are strictly optional:
+
+| Dependency | Enables | Without it |
+|---|---|---|
+| ONNX Runtime (`brew install onnxruntime`) | object-detection plugin | plugin skipped at configure; all else builds and passes |
+| llama.cpp (fetched automatically; disable with `-DAI_ANALYST=OFF`) | AI report generation | reports remain viewable/exportable |
+| Model weights (YOLO `.onnx`, Gemma `.gguf`) | the above at runtime | imported/chosen by the user in Settings; never bundled |
 
 ## Icons
 
@@ -33,4 +65,3 @@ single-color SVG glyphs authored for this project and released under
 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (public domain).
 Each is a monochrome shape recolored at runtime through a control's
 `icon.color`, so one source serves any theme and renders crisply at any DPI.
-The previous raster PNG icons were removed; they remain in git history.

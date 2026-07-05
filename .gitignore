@@ -38,6 +38,11 @@ logs/
 *.db
 .DS_Store
 
+# Model weights are never committed (ExecPlan rule); import/choose them in the app
+*.onnx
+*.pt
+*.gguf
+
 # qmake generated files
 .qmake.stash
 *.pro.user
