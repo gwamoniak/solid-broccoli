@@ -517,7 +517,7 @@ NavPage {
                         visible: visionAvailable
                         text: qsTr("Object detection")
                         value: AppSettings.objectDetection
-                        onToggled: function(checked) { AppSettings.objectDetection = checked }
+                        onSwitched: function(checked) { AppSettings.objectDetection = checked }
                     }
 
                     Rectangle {
@@ -686,7 +686,7 @@ NavPage {
                         width: parent.width
                         text: qsTr("Shutter flash")
                         value: AppSettings.shutterFlash
-                        onToggled: function(checked) { AppSettings.shutterFlash = checked }
+                        onSwitched: function(checked) { AppSettings.shutterFlash = checked }
                     }
 
                     Rectangle {
@@ -700,7 +700,7 @@ NavPage {
                         width: parent.width
                         text: qsTr("Mirror preview")
                         value: AppSettings.mirrorPreview
-                        onToggled: function(checked) { AppSettings.mirrorPreview = checked }
+                        onSwitched: function(checked) { AppSettings.mirrorPreview = checked }
                     }
 
                     Rectangle {
@@ -714,7 +714,7 @@ NavPage {
                         width: parent.width
                         text: qsTr("Spectrum overlay on video")
                         value: AppSettings.spectrumOverlay
-                        onToggled: function(checked) { AppSettings.spectrumOverlay = checked }
+                        onSwitched: function(checked) { AppSettings.spectrumOverlay = checked }
                     }
                 }
             }

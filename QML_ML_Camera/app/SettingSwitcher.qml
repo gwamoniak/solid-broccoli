@@ -9,10 +9,11 @@ ItemDelegate {
     id: row
 
     // Two-way contract with the backing setting: bind `value` to the C++
-    // property and handle `toggled` to write it back. (`checked` is FINAL on
-    // ItemDelegate, so the state lives on the inner Switch instead.)
+    // property and handle `switched` to write it back. (`checked` is FINAL on
+    // ItemDelegate and `toggled` already exists on AbstractButton, so the
+    // signal needs its own name and the state lives on the inner Switch.)
     property bool value: false
-    signal toggled(bool checkedState)
+    signal switched(bool checkedState)
 
     implicitHeight: 48
     padding: 0
@@ -33,7 +34,7 @@ ItemDelegate {
         Switch {
             id: control
             checked: row.value
-            onToggled: row.toggled(checked)
+            onToggled: row.switched(checked)
 
             // Collapse the control to exactly the pill so it lines up flush
             // with the rest of the column and never spills past the drawer edge.

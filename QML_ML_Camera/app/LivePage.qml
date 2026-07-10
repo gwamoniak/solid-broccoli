@@ -229,13 +229,14 @@ NavPage {
                     visible: peakMarker.wavelengthNm >= spectrumView.minWavelength
                              && peakMarker.wavelengthNm <= spectrumView.maxWavelength
                     x: {
+                        // Touch the view's ranges so the binding re-evaluates on pan/zoom.
                         spectrumView.minWavelength; spectrumView.maxWavelength; spectrumView.width
-                        spectrumView.x + spectrumView.wavelengthToX(peakMarker.wavelengthNm) - width / 2
+                        return spectrumView.x + spectrumView.wavelengthToX(peakMarker.wavelengthNm) - width / 2
                     }
                     y: {
                         spectrumView.yMax
-                        Math.max(spectrumView.y,
-                                 spectrumView.y + spectrumView.valueToY(peakMarker.value) - height - 6)
+                        return Math.max(spectrumView.y,
+                                        spectrumView.y + spectrumView.valueToY(peakMarker.value) - height - 6)
                     }
 
                     Label {
