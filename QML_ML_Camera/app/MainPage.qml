@@ -3,8 +3,6 @@ import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.2
 import QtMultimedia
 import QtQuick.Controls.Material 2.2
-import QtQuick.Dialogs
-import Qt.labs.settings 1.0
 import solid.broccoli 1.0
 import "."
 
@@ -46,7 +44,7 @@ PageTheme {
             smooth: true
             antialiasing: true
             //text: qsTr("ALBUM")
-            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
+            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
             icon.source: "qrc:/images/svg/gallery.svg"
             icon.color: Style.iconColor
             icon.width : Style.iconSize
@@ -71,7 +69,7 @@ PageTheme {
             Layout.preferredWidth:   Style.roundButtonWidth
             smooth: true
             antialiasing: true
-            Layout.alignment: Qt.AlignLeft | Qt.AnchorTop
+            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
             icon.source: "qrc:/images/svg/movie.svg"
             icon.color: Style.iconColor
             icon.width: Style.iconSize
@@ -188,14 +186,14 @@ PageTheme {
                 Layout.fillWidth: true
                 text: qsTr("Shutter flash")
                 value: AppSettings.shutterFlash
-                onToggled: AppSettings.shutterFlash = checkedState
+                onSwitched: AppSettings.shutterFlash = checkedState
             }
 
             SettingSwitcher {
                 Layout.fillWidth: true
                 text: qsTr("Mirror preview")
                 value: AppSettings.mirrorPreview
-                onToggled: AppSettings.mirrorPreview = checkedState
+                onSwitched: AppSettings.mirrorPreview = checkedState
             }
 
             Item { Layout.fillHeight: true }
