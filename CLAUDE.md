@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 **solid-broccoli** is a Qt6/QML tricorder-style multi-sensor instrument: live spectroscopy (simulated instruments + BLE bridge path), a Geiger-counter modality, a SQLite lab notebook (sessions, captures, measurements, reports), a documentation camera with photo/video albums and a spectrum-overlay recorder, an optional ONNX object-detection plugin, and an optional on-device AI report generator (llama.cpp + Gemma). The full architecture is documented in `docs/ARCHITECTURE.md` (canonical, Mermaid) — read it before structural changes; `docs/USER_MANUAL.md` describes behavior from the user's side.
@@ -35,24 +33,15 @@ ctest --test-dir QML_ML_Camera/build --output-on-failure
 /opt/homebrew/opt/qt/bin/qmllint QML_ML_Camera/app/*.qml
 ```
 
-**Dependencies:** Qt6 (Core, Gui, Qml, Quick, QuickControls2, Sql, Svg, Multimedia, Bluetooth, Test). On macOS with Homebrew Qt: ensure `Qt6_DIR` or `CMAKE_PREFIX_PATH` points to the Qt installation if CMake cannot find it automatically. **Optional:** ONNX Runtime (detection plugin skipped at configure when absent) and llama.cpp via FetchContent, pinned tag b6100 (`-DAI_ANALYST=OFF` to disable). The bare-machine rule is law: a clone with neither must configure, build, and pass 100% of tests.
+**Dependencies:** Qt6 (components listed in the top-level `find_package`). On macOS with Homebrew Qt: ensure `Qt6_DIR` or `CMAKE_PREFIX_PATH` points to the Qt installation if CMake cannot find it automatically. **Optional:** ONNX Runtime (detection plugin skipped at configure when absent) and llama.cpp via FetchContent, pinned tag b6100 (`-DAI_ANALYST=OFF` to disable). The bare-machine rule is law: a clone with neither must configure, build, and pass 100% of tests.
 
 The legacy qmake files (`*.pro`, `Makefile.*`) remain in the tree but are not the active build system.
 
 ## Architecture
 
-Nine CMake targets — full dependency graph, device-stack UML, data flows, ER schema, and threading map in `docs/ARCHITECTURE.md`:
+Nine CMake targets, one directory each under `QML_ML_Camera/`. The target table (directories and roles), the full dependency graph, device-stack UML, data flows, ER schema, and threading map are all in `docs/ARCHITECTURE.md` — read it before structural changes.
 
-| Target | Directory | Role |
-|--------|-----------|------|
-| `logger-core` (shared) | `QML_ML_Camera/logger-core/` | CSV logger via `qInstallMessageHandler`; `QLoggingCategory` wrappers (`logInfo()` etc.). |
-| `camera-core` (shared) | `QML_ML_Camera/camera-core/` | SQLite persistence (`DatabaseManager` + DAOs), `QAbstractListModel` bridges to QML, `StorageLocations`. Really "data-core"; name kept deliberately. |
-| `spectro-core` (shared) | `QML_ML_Camera/spectro-core/` | Analysis math, sensor-neutral device stack (transports, sans-IO codecs, devices), BLE, peak matching. |
-| `spectro-sim` (shared) | `QML_ML_Camera/spectro-sim/` | Physics synthesis, instrument-noise model, simulated devices, byte-level bridge impersonation, fault injection. |
-| `processor-api` (interface) | `QML_ML_Camera/processor-api/` | `FrameProcessor` v1.1 plugin interface + `Detection` types. |
-| `plugins/grayscale`, `plugins/objectdetect` (modules) | `QML_ML_Camera/plugins/` | Runtime-loaded frame processors; objectdetect needs ONNX Runtime and loads from `app/vision/`. |
-| `ai-core` (static, optional) | `QML_ML_Camera/ai-core/` | `AiAnalyst` over llama.cpp (pinned tag b6100). |
-| `QML_ML_Camera_App` (executable) | `QML_ML_Camera/app/` | Services (`CameraService`, `SpectrometerService`, `GeigerService`, `ReportService`), QML shell, pipeline composition in `main.cpp`. |
+One naming trap the tree won't tell you: **`camera-core` is really "data-core"** — SQLite persistence (`DatabaseManager` + DAOs), `QAbstractListModel` bridges to QML, `StorageLocations`. Nothing camera-specific lives there; the name is kept deliberately.
 
 Key conventions (enforced, with rationale in `SPECTRO_TRICORDER_EXECPLAN.md`'s Decision Log):
 
@@ -70,18 +59,13 @@ Key conventions (enforced, with rationale in `SPECTRO_TRICORDER_EXECPLAN.md`'s D
 - App-layer classes (services, models, overlay, context builder) are compiled source-by-source into their tests (see `tst_spectrometerservice` for the pattern) because the app layer has no library yet — backlog item 1 (`app-core`) will change this.
 - Philosophy: analysis math and codecs are validated against **simulator ground truth** (the simulator knows what it injected — peak positions, Poisson means, frame bytes). Tests that need real model files `QSKIP` when absent (`SOLIDBROCCOLI_TEST_GGUF` gates the AI generation smoke test); the suite must be 100% green on a bare machine.
 - Proving the optional-dependency axes needs a scratch build: hide Homebrew with `-DCMAKE_IGNORE_PATH="/opt/homebrew/include;/opt/homebrew/lib"` (setting the find variables to `NOTFOUND` does **not** work — CMake re-searches), and disable AI with `-DAI_ANALYST=OFF`.
-- Run qmllint after any QML change. The current baseline is ~387 warnings in three buckets. **(1) Structural, not actionable today (~358):** context properties (`albumModel`, `reportService`, `owningStack`, …) and the C++-registered `SpectrumView`/`StripChartView` types are invisible to qmllint, so every use is flagged `[unqualified]`/`[import]`/`[unresolved-type]` (the recorded fix is exposing the app as a QML module and migrating context properties to registered singletons — hardening backlog). **(2) Real, pre-existing, ~29 `[Quick.layout-positioning]`:** setting `width`/`height` on a Layout-managed item (Qt calls it undefined behavior — use `Layout.preferredWidth`/`implicitWidth`). These span AnalysisPanel/CameraPage/GeigerPage/LivePage/SessionDetailPage and want a *verified* cleanup pass (fixing them can shift layouts), not a blind sweep — recorded backlog. **(3) Everything else is a real finding to fix now:** `[unused-imports]`, `[missing-property]` (e.g. a real `Qt.AlignTop` typo), `[confusing-expression-statement]` (a block binding missing `return`), duplicate/invalid signal overrides. The rule: **introduce no new bucket-2 or bucket-3 warnings**, and drive the existing bucket-2 count down deliberately.
+- Run qmllint after any QML change. The rule: **introduce no new bucket-2 or bucket-3 warnings**, and drive the existing bucket-2 count down deliberately. See the `qmllint-baseline` skill for the current ~387-warning baseline and what the three buckets mean.
 
 ## ExecPlans (PLANS.md)
 
 Feature work in this repo uses "ExecPlan" design documents defined by `PLANS.md`. When implementing a non-trivial feature, read `PLANS.md` in full and author a self-contained ExecPlan markdown file before writing code. ExecPlans are living documents: update `Progress`, `Decision Log`, and `Surprises & Discoveries` at every stopping point, and commit at milestone boundaries with the milestone name in the message. The active plan is `SPECTRO_FIELD_READINESS_EXECPLAN.md`; `SPECTRO_TRICORDER_EXECPLAN.md` is the closed desktop-scope record (rationale in its Decision Log, hard-won lessons in its Surprises & Discoveries).
 
 Four project subagents are defined in `.claude/agents/` for milestone work: `spectro-architect` (refines the next milestone against the tree before coding), `spectro-builder` (implements), `spectro-scientist` (tests and scientific validation), `spectro-reviewer` (reviews the milestone diff before commit). They defer to the **active** plan (`SPECTRO_FIELD_READINESS_EXECPLAN.md`) as the single source of truth; the closed tricorder plan remains the reference for settled rationale (Decision Log) and hard-won lessons (Surprises & Discoveries).
-
-## Sibling projects (same sandbox, same maintainer)
-
-- `../Coffee_Dispenser` — Qt6/QML coffee-machine HMI being modernized per its own `COFFEE_DISPENSER_MODERNIZATION_EXECPLAN.md` (authored 2026-07-05, M0 not started). It deliberately reuses the patterns proven here — CMake target layering, sans-IO codecs, simulator-first with fault injection, thin views, design tokens, gated hardware milestones — and has its own `CLAUDE.md` and a `dispenser-builder` agent. The ExecPlan discipline applies there even though `PLANS.md` lives only in this repo.
-- `../../llm/dobromir` — pre-alpha LLM/VLM project (photo of a problem → wordless IKEA-style repair schematic). Not Qt; different laws (`snake_case` naming, no-training-before-eval, learning milestones the maintainer implements *by hand*). See its `CLAUDE.md` and `ROADMAP.md` before doing anything there.
 
 ## Gotchas (each cost real time once; details in the plan's Surprises log)
 
