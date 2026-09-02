@@ -1,6 +1,6 @@
 ---
 name: qmllint-baseline
-description: The qmllint warning baseline for solid-broccoli — what the ~387 current warnings are, which of the three buckets each belongs to, and which are real findings to fix now. Use when running qmllint, triaging its output, or deciding whether a warning is pre-existing noise or a genuine regression.
+description: The qmllint warning baseline for solid-broccoli after registered-singleton and layout cleanup. Use when running qmllint, triaging its output, or deciding whether an unqualified-scope warning is pre-existing or a regression.
 ---
 
 # qmllint baseline
@@ -8,26 +8,35 @@ description: The qmllint warning baseline for solid-broccoli — what the ~387 c
 Run after any QML change:
 
 ```bash
-/opt/homebrew/opt/qt/bin/qmllint QML_ML_Camera/app/*.qml
+/opt/homebrew/opt/qt/bin/qmllint -I QML_ML_Camera/qmltypes QML_ML_Camera/app/*.qml
 ```
 
-**The rule: introduce no new bucket-2 or bucket-3 warnings, and drive the existing bucket-2 count down deliberately.**
+**The rule: introduce no new warnings and drive the remaining unqualified-scope baseline down deliberately.**
 
-The current baseline is ~387 warnings in three buckets.
+The current baseline is 141 `[unqualified]` warnings. There are zero module
+import, unresolved-type, missing-property, unused-import, confusing-expression,
+or `Quick.layout-positioning` warnings.
 
-## Bucket 1 — structural, not actionable today (~358)
+## Remaining baseline — parent/delegate scope (141)
 
-Context properties (`albumModel`, `reportService`, `owningStack`, …) and the C++-registered `SpectrumView` / `StripChartView` types are invisible to qmllint, so every use is flagged `[unqualified]`, `[import]`, or `[unresolved-type]`.
+The C++ objects are registered under `solid.broccoli 1.0` and described to
+tooling by `QML_ML_Camera/qmltypes/solid/broccoli/plugins.qmltypes`. The
+remaining warnings are older implicit parent-property and delegate-role
+lookups. They work at runtime but can be made explicit with component ids or
+`required property` declarations when those pages are next edited.
 
-The recorded fix is exposing the app as a QML module and migrating context properties to registered singletons — that's a hardening-backlog item, not something to attempt piecemeal. Ignore these.
+Do not suppress the category globally: a new unqualified service/model name is
+usually a real wiring error. Compare the exact count and inspect any new line.
 
-## Bucket 2 — real, pre-existing (~29 `[Quick.layout-positioning]`)
+## Resolved baseline
 
-Setting `width` / `height` on a Layout-managed item. Qt calls this undefined behavior — use `Layout.preferredWidth` / `implicitWidth` instead.
+The former 29 `Quick.layout-positioning` warnings were corrected with
+`Layout.preferredWidth` / `Layout.preferredHeight`. Context properties were
+replaced by `AppContext` and registered service singletons. Missing C++ type
+metadata is no longer an accepted explanation for import or unresolved-type
+warnings.
 
-These span `AnalysisPanel`, `CameraPage`, `GeigerPage`, `LivePage`, and `SessionDetailPage`. They want a *verified* cleanup pass, not a blind sweep: fixing them can shift layouts, so each change needs to be looked at running. Recorded as backlog.
-
-## Bucket 3 — real findings, fix now
+## Real findings — fix now
 
 Everything else is a genuine defect to fix in the change that introduced it:
 

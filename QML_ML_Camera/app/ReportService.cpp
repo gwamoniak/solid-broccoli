@@ -28,7 +28,7 @@ ReportService::ReportService(DatabaseManager& db, SpectrometerService& spectrome
     });
     connect(m_analyst, &AiAnalyst::generationFinished, this,
             [this](const QString& fullText) {
-                m_db.m_reportDao.addReport(m_pendingSessionId, m_analyst->modelName(),
+                m_db.reportDao().addReport(m_pendingSessionId, m_analyst->modelName(),
                                            promptVersion(), m_pendingContextJson,
                                            fullText);
                 qDebug(logInfo()) << "ReportService: report saved for session"
@@ -83,7 +83,7 @@ void ReportService::setBusy(bool busy)
 QString ReportService::buildContextJson(int sessionId) const
 {
     SessionRecord session;
-    for (const SessionRecord& record : m_db.m_sessionDao.sessions()) {
+    for (const SessionRecord& record : m_db.sessionDao().sessions()) {
         if (record.id == sessionId) {
             session = record;
             break;
@@ -93,8 +93,8 @@ QString ReportService::buildContextJson(int sessionId) const
     const QString instrument =
         m_spectrometer.availableDevices().value(m_spectrometer.currentDeviceIndex());
     const QJsonObject context = ReportContextBuilder::build(
-        session, m_db.m_spectrumDao.spectra(sessionId),
-        m_db.m_measurementDao.measurements(sessionId),
+        session, m_db.spectrumDao().spectra(sessionId),
+        m_db.measurementDao().measurements(sessionId),
         m_detections.latestDetections(), instrument);
     return QString::fromUtf8(
         QJsonDocument(context).toJson(QJsonDocument::Compact));

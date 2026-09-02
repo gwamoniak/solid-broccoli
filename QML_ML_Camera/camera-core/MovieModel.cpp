@@ -22,7 +22,7 @@ QString formatDuration(qint64 durationMs)
 MovieModel::MovieModel(DatabaseManager& db, QObject* parent) :
     QAbstractListModel(parent),
     m_sqlDB(db),
-    m_vMovies(m_sqlDB.m_movieDao.movies())
+    m_vMovies(m_sqlDB.movieDao().movies())
 {
     qDebug(logInfo()) << "MovieModel has been created!";
 }
@@ -33,7 +33,7 @@ void MovieModel::addRecording(const QString& filePath, qint64 durationMs)
     beginInsertRows(QModelIndex(), 0, 0);
     unique_ptr<Movie> movie(new Movie(QUrl::fromLocalFile(filePath), durationMs,
                                       QDateTime::currentDateTime().toString(Qt::ISODate)));
-    m_sqlDB.m_movieDao.addMovie(*movie);
+    m_sqlDB.movieDao().addMovie(*movie);
     m_vMovies->insert(m_vMovies->begin(), std::move(movie));
     endInsertRows();
     qDebug(logInfo()) << "Recording registered:" << filePath;
@@ -47,7 +47,7 @@ void MovieModel::rename(int row, const QString& _name)
     }
     Movie& movie = *m_vMovies->at(row);
     movie.set_sName(_name);
-    m_sqlDB.m_movieDao.updateMovie(movie);
+    m_sqlDB.movieDao().updateMovie(movie);
     emit dataChanged(idx, idx);
 }
 
@@ -101,7 +101,7 @@ bool MovieModel::removeRows(int row, int count, const QModelIndex& parent)
     int countLeft = count;
     while (countLeft--) {
         const Movie& movie = *m_vMovies->at(row + countLeft);
-        m_sqlDB.m_movieDao.removeMovie(movie._nMovieID());
+        m_sqlDB.movieDao().removeMovie(movie._nMovieID());
     }
     m_vMovies->erase(m_vMovies->begin() + row,
                      m_vMovies->begin() + row + count);

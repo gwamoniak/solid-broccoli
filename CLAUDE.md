@@ -4,15 +4,15 @@
 
 **solid-broccoli** is a Qt6/QML tricorder-style multi-sensor instrument: live spectroscopy (simulated instruments + BLE bridge path), a Geiger-counter modality, a SQLite lab notebook (sessions, captures, measurements, reports), a documentation camera with photo/video albums and a spectrum-overlay recorder, an optional ONNX object-detection plugin, and an optional on-device AI report generator (llama.cpp + Gemma). The full architecture is documented in `docs/ARCHITECTURE.md` (canonical, Mermaid) — read it before structural changes; `docs/USER_MANUAL.md` describes behavior from the user's side.
 
-## Current development status (2026-07-05 — authoritative detail lives in the active plan's Progress section)
+## Current development status (2026-09-02 — authoritative detail lives in the active plan's Progress section)
 
-Active branch: `dev_modern_update`. **Active plan: `SPECTRO_FIELD_READINESS_EXECPLAN.md`.** Its predecessor `SPECTRO_TRICORDER_EXECPLAN.md` is closed as complete (Revision 5): the desktop product is done — Milestones 1–10 and 12–14 shipped, 21 test executables green, bare-machine builds verified. Everything still open lives in the field-readiness plan, and every one of its milestones is gated:
+**Active plan: `SPECTRO_FIELD_READINESS_EXECPLAN.md`.** Its predecessor `SPECTRO_TRICORDER_EXECPLAN.md` is closed as complete. The field-readiness hardening Milestones 5–14 are shipped; the only open milestones require an external model, physical hardware, or an Android kit:
 
 - **Milestone 1** — vision model field acceptance; gate: a downloaded YOLO `.onnx` (Settings → VISION → Import).
 - **Milestone 2** — AI analyst field acceptance; gate: a downloaded Gemma `.gguf` (Settings → AI → Choose).
 - **Milestone 3** — live hardware over BLE; gate: an ESP32 bridge with AS7265x and/or a Geiger tube on the desk (wire contract embedded in the plan and in `BridgeContract.h`).
 - **Milestone 4** — Android tablet bring-up; gate: Qt for Android kit + physical tablet. Do NOT start without both.
-- **Hardening backlog** — ten recorded candidates (app-core library, CI, QML boot smoke test, in-app Help, parser fuzzing, …), *recorded not scheduled*: take one only when the maintainer asks.
+- **Milestones 5–14** — complete: `app-core`, macOS CI, real-shell QML smoke test, in-app Help, parser properties/fuzzing, global notifications, registered singleton facades and layout cleanup, DAO encapsulation, ASan/UBSan preset, and spectrum cursor.
 
 ## Build
 
@@ -30,7 +30,7 @@ cmake --build QML_ML_Camera/build -j
 
 # Tests and QML lint
 ctest --test-dir QML_ML_Camera/build --output-on-failure
-/opt/homebrew/opt/qt/bin/qmllint QML_ML_Camera/app/*.qml
+/opt/homebrew/opt/qt/bin/qmllint -I QML_ML_Camera/qmltypes QML_ML_Camera/app/*.qml
 ```
 
 **Dependencies:** Qt6 (components listed in the top-level `find_package`). On macOS with Homebrew Qt: ensure `Qt6_DIR` or `CMAKE_PREFIX_PATH` points to the Qt installation if CMake cannot find it automatically. **Optional:** ONNX Runtime (detection plugin skipped at configure when absent) and llama.cpp via FetchContent, pinned tag b6100 (`-DAI_ANALYST=OFF` to disable). The bare-machine rule is law: a clone with neither must configure, build, and pass 100% of tests.
@@ -39,7 +39,7 @@ The legacy qmake files (`*.pro`, `Makefile.*`) remain in the tree but are not th
 
 ## Architecture
 
-Nine CMake targets, one directory each under `QML_ML_Camera/`. The target table (directories and roles), the full dependency graph, device-stack UML, data flows, ER schema, and threading map are all in `docs/ARCHITECTURE.md` — read it before structural changes.
+Ten CMake targets, one directory each under `QML_ML_Camera/`. The target table (directories and roles), the full dependency graph, device-stack UML, data flows, ER schema, and threading map are all in `docs/ARCHITECTURE.md` — read it before structural changes. `app-core` is the shared boundary for services, facades, and render adapters used by both the executable and tests.
 
 One naming trap the tree won't tell you: **`camera-core` is really "data-core"** — SQLite persistence (`DatabaseManager` + DAOs), `QAbstractListModel` bridges to QML, `StorageLocations`. Nothing camera-specific lives there; the name is kept deliberately.
 
@@ -56,10 +56,10 @@ Key conventions (enforced, with rationale in `SPECTRO_TRICORDER_EXECPLAN.md`'s D
 ## Testing
 
 - Full suite: `ctest --test-dir QML_ML_Camera/build --output-on-failure`; one test: append `-R tst_geiger`. Tests live in `QML_ML_Camera/tests/`, registered via the `add_camera_test()` helper in `tests/CMakeLists.txt`.
-- App-layer classes (services, models, overlay, context builder) are compiled source-by-source into their tests (see `tst_spectrometerservice` for the pattern) because the app layer has no library yet — backlog item 1 (`app-core`) will change this.
+- App-layer classes are linked from `app-core`; tests exercise the same compiled objects shipped in the executable.
 - Philosophy: analysis math and codecs are validated against **simulator ground truth** (the simulator knows what it injected — peak positions, Poisson means, frame bytes). Tests that need real model files `QSKIP` when absent (`SOLIDBROCCOLI_TEST_GGUF` gates the AI generation smoke test); the suite must be 100% green on a bare machine.
 - Proving the optional-dependency axes needs a scratch build: hide Homebrew with `-DCMAKE_IGNORE_PATH="/opt/homebrew/include;/opt/homebrew/lib"` (setting the find variables to `NOTFOUND` does **not** work — CMake re-searches), and disable AI with `-DAI_ANALYST=OFF`.
-- Run qmllint after any QML change. The rule: **introduce no new bucket-2 or bucket-3 warnings**, and drive the existing bucket-2 count down deliberately. See the `qmllint-baseline` skill for the current ~387-warning baseline and what the three buckets mean.
+- Run qmllint after any QML change with `-I QML_ML_Camera/qmltypes`. The registered C++ module resolves cleanly and the layout-warning baseline is zero; see the `qmllint-baseline` skill for the remaining unqualified-scope baseline.
 
 ## ExecPlans (PLANS.md)
 

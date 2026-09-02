@@ -34,6 +34,8 @@
 # CMake and local runtime output
 build/
 QML_ML_Camera/build/
+QML_ML_Camera/build-asan/
+QML_ML_Camera/build-ci/
 logs/
 *.db
 .DS_Store

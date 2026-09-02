@@ -1,0 +1,3 @@
+module solid.broccoli
+typeinfo plugins.qmltypes
+depends QtQuick

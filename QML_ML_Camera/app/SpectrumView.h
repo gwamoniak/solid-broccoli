@@ -6,8 +6,7 @@
 #include <QVariantList>
 
 #include "Spectrum.h"
-
-class SpectrometerService;
+#include "SpectrometerService.h"
 
 // GPU spectral plot: grid, axes, live/dark/reference polylines, zoom/pan.
 // All geometry is built in C++ (scene-graph nodes); QML supplies colors from
@@ -38,6 +37,10 @@ class SpectrumView : public QQuickItem
     Q_PROPERTY(QColor overlayColor3 MEMBER m_overlayColor3 NOTIFY colorsChanged)
     Q_PROPERTY(double integrationFromNm READ integrationFromNm WRITE setIntegrationFromNm NOTIFY integrationRegionChanged)
     Q_PROPERTY(double integrationToNm READ integrationToNm WRITE setIntegrationToNm NOTIFY integrationRegionChanged)
+    Q_PROPERTY(bool cursorVisible READ cursorVisible NOTIFY cursorChanged)
+    Q_PROPERTY(double cursorWavelengthNm READ cursorWavelengthNm NOTIFY cursorChanged)
+    Q_PROPERTY(double cursorValue READ cursorValue NOTIFY cursorChanged)
+    Q_PROPERTY(QString cursorCandidate READ cursorCandidate NOTIFY cursorChanged)
 
 public:
     explicit SpectrumView(QQuickItem* parent = nullptr);
@@ -64,11 +67,17 @@ public:
     void setIntegrationFromNm(double nm);
     double integrationToNm() const { return m_integrationToNm; }
     void setIntegrationToNm(double nm);
+    bool cursorVisible() const { return m_cursorVisible; }
+    double cursorWavelengthNm() const { return m_cursorWavelengthNm; }
+    double cursorValue() const { return m_cursorValue; }
+    QString cursorCandidate() const { return m_cursorCandidate; }
 
     Q_INVOKABLE double wavelengthToX(double nm) const;
     Q_INVOKABLE double valueToY(double value) const;
     Q_INVOKABLE void centerOn(double nm);
     Q_INVOKABLE void resetView();
+    Q_INVOKABLE void inspectAtX(double x);
+    Q_INVOKABLE void clearCursor();
 
 signals:
     void sourceChanged();
@@ -80,6 +89,7 @@ signals:
     void traceVisibilityChanged();
     void colorsChanged();
     void integrationRegionChanged();
+    void cursorChanged();
 
 protected:
     QSGNode* updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) override;
@@ -87,6 +97,8 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void hoverMoveEvent(QHoverEvent* event) override;
+    void hoverLeaveEvent(QHoverEvent* event) override;
     void touchEvent(QTouchEvent* event) override;
     bool event(QEvent* event) override;
 
@@ -132,6 +144,10 @@ private:
     QColor m_overlayColor3{0x5A, 0xC8, 0xFA};
     double m_integrationFromNm = qQNaN();
     double m_integrationToNm = qQNaN();
+    bool m_cursorVisible = false;
+    double m_cursorWavelengthNm = 0.0;
+    double m_cursorValue = 0.0;
+    QString m_cursorCandidate;
 
     double m_lastMouseX = 0.0;
     double m_lastPinchDistance = 0.0;

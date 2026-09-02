@@ -72,8 +72,8 @@ NavPage {
                 }
 
                 Rectangle {
-                    width: 8
-                    height: 8
+                    Layout.preferredWidth: 8
+                    Layout.preferredHeight: 8
                     radius: 4
                     color: Theme.live
                     visible: SpectrometerService.acquiring
@@ -81,15 +81,6 @@ NavPage {
 
                 Item { Layout.fillWidth: true }
 
-                Label {
-                    id: errorLabel
-                    text: ""
-                    visible: text.length > 0
-                    font.pointSize: Theme.footnote
-                    color: Theme.destructive
-                    elide: Text.ElideRight
-                    Layout.maximumWidth: parent.width * 0.4
-                }
             }
 
             Rectangle {
@@ -153,8 +144,8 @@ NavPage {
                 }
 
                 Rectangle {
-                    width: 8
-                    height: 8
+                    Layout.preferredWidth: 8
+                    Layout.preferredHeight: 8
                     radius: 4
                     color: Theme.live
                     visible: GeigerService.acquiring
@@ -291,6 +282,45 @@ NavPage {
                 font.pointSize: Theme.caption
                 color: Theme.tertiaryLabel
             }
+
+            Rectangle {
+                visible: spectrumView.cursorVisible
+                x: spectrumView.x + spectrumView.wavelengthToX(spectrumView.cursorWavelengthNm)
+                y: spectrumView.y
+                width: Theme.hairline
+                height: spectrumView.height
+                color: Theme.accent
+            }
+
+            Rectangle {
+                id: cursorReadout
+                visible: spectrumView.cursorVisible
+                x: Math.min(spectrumView.x + spectrumView.width - width,
+                            Math.max(spectrumView.x,
+                                     spectrumView.x + spectrumView.wavelengthToX(
+                                         spectrumView.cursorWavelengthNm) + 8))
+                y: Math.max(spectrumView.y,
+                            spectrumView.y + spectrumView.valueToY(
+                                spectrumView.cursorValue) - height - 8)
+                implicitWidth: cursorText.implicitWidth + 16
+                implicitHeight: cursorText.implicitHeight + 12
+                radius: Theme.radiusControl
+                color: Theme.surfaceElevated
+                border.width: Theme.hairline
+                border.color: Theme.accent
+
+                Label {
+                    id: cursorText
+                    anchors.centerIn: parent
+                    text: spectrumView.cursorWavelengthNm.toFixed(2) + " nm  "
+                          + spectrumView.cursorValue.toFixed(3)
+                          + (spectrumView.cursorCandidate.length > 0
+                             ? "  ·  " + spectrumView.cursorCandidate : "")
+                    font.family: Theme.readoutFontName
+                    font.pointSize: Theme.caption
+                    color: Theme.label
+                }
+            }
         }
 
             AnalysisPanel {
@@ -368,8 +398,8 @@ NavPage {
                 // Start / Stop
                 Rectangle {
                     id: startButton
-                    width: Theme.shutterSize
-                    height: Theme.shutterSize
+                    Layout.preferredWidth: Theme.shutterSize
+                    Layout.preferredHeight: Theme.shutterSize
                     radius: Theme.shutterSize / 2
                     color: "transparent"
                     border.color: Theme.accent
@@ -493,17 +523,4 @@ NavPage {
         onAccepted: SpectrometerService.saveCapture(nameText, tagsText)
     }
 
-    Connections {
-        target: SpectrometerService
-        function onErrorOccurred(message) {
-            errorLabel.text = message
-            errorTimer.restart()
-        }
-    }
-
-    Timer {
-        id: errorTimer
-        interval: 4000
-        onTriggered: errorLabel.text = ""
-    }
 }

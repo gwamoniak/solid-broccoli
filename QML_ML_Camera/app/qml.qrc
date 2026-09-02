@@ -5,11 +5,8 @@
         <file>AlbumListPage.qml</file>
         <file>Style.qml</file>
         <file>qmldir</file>
-        <file>ToolBarTheme.qml</file>
-        <file>PageTheme.qml</file>
         <file>AlbumPage.qml</file>
         <file>PicturePage.qml</file>
-        <file>MainPage.qml</file>
         <file>images/png/add_album_gallery.png</file>
         <file>images/png/add_photo.png</file>
         <file>images/png/album_gallery.png</file>

@@ -6,12 +6,9 @@
         <file alias="AlbumListPage.qml">AlbumListPage.qml</file>
         <file alias="Style.qml">Style.qml</file>
         <file alias="qmldir">qmldir</file>
-        <file alias="ToolBarTheme.qml">ToolBarTheme.qml</file>
-        <file alias="PageTheme.qml">PageTheme.qml</file>
         <file alias="InputDialog.qml">InputDialog.qml</file>
         <file alias="AlbumPage.qml">AlbumPage.qml</file>
         <file alias="PicturePage.qml">PicturePage.qml</file>
-        <file alias="MainPage.qml">MainPage.qml</file>
         <file alias="images/png/add_album_gallery.png">images/png/add_album_gallery.png</file>
         <file alias="images/png/add_photo.png">images/png/add_photo.png</file>
         <file alias="images/png/album_gallery.png">images/png/album_gallery.png</file>

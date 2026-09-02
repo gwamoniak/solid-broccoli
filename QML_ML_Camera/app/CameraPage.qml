@@ -8,7 +8,7 @@ import "."
 NavPage {
     id: cameraPage
     showNavBar: false
-    background: Rectangle { color: "#000000" }
+    background: Rectangle { color: Theme.cameraBackground }
 
     Component.onCompleted: {
         CameraService.attachVideoOutput(videoOutput)
@@ -24,11 +24,6 @@ NavPage {
 
     Connections {
         target: CameraService
-        function onCaptureError(message) {
-            errorLabel.text = message
-            errorLabel.visible = true
-            errorTimer.restart()
-        }
         function onImageSaved(filePath) {
             if (AppSettings.shutterFlash)
                 flashOverlay.opacity = 0.8
@@ -74,24 +69,9 @@ NavPage {
             id: durationLabel
             anchors.centerIn: parent
             text: "● " + CameraService.recordingDuration
-            color: "#FFFFFF"
+            color: Theme.onCamera
             font.pointSize: Theme.footnote
             font.weight: Font.Medium
-        }
-    }
-
-    Label {
-        id: errorLabel
-        anchors.bottom: videoOutput.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.margins: 12
-        color: Theme.destructive
-        font.pointSize: Theme.subhead
-        visible: false
-        Timer {
-            id: errorTimer
-            interval: 4000
-            onTriggered: errorLabel.visible = false
         }
     }
 
@@ -106,13 +86,13 @@ NavPage {
 
         ComboBox {
             id: albumCombo
-            model: albumModel
+            model: AppContext.albumModel
             textRole: "name"
             valueRole: "id"
             implicitWidth: 210
             implicitHeight: 34
-            currentIndex: albumCombo.indexOfValue(captureCoordinator.targetAlbumId)
-            onActivated: captureCoordinator.setTargetAlbum(currentValue)
+            currentIndex: albumCombo.indexOfValue(AppContext.captureCoordinator.targetAlbumId)
+            onActivated: AppContext.captureCoordinator.targetAlbumId = currentValue
 
             background: Rectangle {
                 radius: 17
@@ -131,7 +111,7 @@ NavPage {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Label {
-                    text: captureCoordinator.targetAlbumName
+                    text: AppContext.captureCoordinator.targetAlbumName
                     font.pointSize: Theme.subhead
                     color: Theme.label
                     elide: Text.ElideRight
@@ -174,7 +154,7 @@ NavPage {
         id: newAlbumDialog
         label: qsTr("New album")
         hint: qsTr("Album name")
-        onAccepted: captureCoordinator.createAlbumAndSelect(editText.text)
+        onAccepted: AppContext.captureCoordinator.createAlbumAndSelect(editText.text)
     }
 
     // ── Live detection chips (object detection enabled + objects in view) ──
@@ -183,10 +163,10 @@ NavPage {
         anchors.left: videoOutput.left
         anchors.margins: 12
         spacing: 6
-        visible: AppSettings.objectDetection && detectionModel.count > 0
+        visible: AppSettings.objectDetection && AppContext.detectionModel.count > 0
 
         Repeater {
-            model: detectionModel
+            model: AppContext.detectionModel
             Rectangle {
                 id: detectionChip
                 required property string label
@@ -216,7 +196,7 @@ NavPage {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 160
-        color: "#000000"
+        color: Theme.cameraBackground
 
         ColumnLayout {
             anchors.fill: parent
@@ -260,8 +240,8 @@ NavPage {
 
                 // Shutter / record button
                 Rectangle {
-                    width: Theme.shutterSize
-                    height: Theme.shutterSize
+                    Layout.preferredWidth: Theme.shutterSize
+                    Layout.preferredHeight: Theme.shutterSize
                     radius: Theme.shutterSize / 2
                     color: "transparent"
                     border.width: Theme.accentRing
@@ -272,7 +252,7 @@ NavPage {
                         width: cameraPage.photoMode ? Theme.shutterSize - 12 : 28
                         height: cameraPage.photoMode ? Theme.shutterSize - 12 : 28
                         radius: cameraPage.photoMode ? (Theme.shutterSize - 12) / 2 : 6
-                        color: cameraPage.photoMode ? "#FFFFFF" : Theme.destructive
+                        color: cameraPage.photoMode ? Theme.onCamera : Theme.destructive
 
                         Behavior on width  { NumberAnimation { duration: 150 } }
                         Behavior on height { NumberAnimation { duration: 150 } }
@@ -299,7 +279,7 @@ NavPage {
                 // Settings gear
                 ToolButton {
                     icon.source: "qrc:/images/svg/settings.svg"
-                    icon.color: "#FFFFFF"
+                    icon.color: Theme.onCamera
                     icon.width: 26; icon.height: 26
                     background: null
                     onClicked: settingsDrawer.open()
@@ -337,7 +317,8 @@ NavPage {
 
             Rectangle {
                 Layout.alignment: Qt.AlignHCenter
-                width: 36; height: 5
+                Layout.preferredWidth: 36
+                Layout.preferredHeight: 5
                 radius: 3
                 color: Theme.fill
             }
@@ -372,7 +353,7 @@ NavPage {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                model: pluginModel
+                model: AppContext.pluginModel
                 spacing: 4
                 delegate: RowLayout {
                     width: processorList.width
@@ -384,7 +365,7 @@ NavPage {
                     }
                     Switch {
                         checked: model.enabled
-                        onToggled: pluginModel.setEnabled(index, checked)
+                        onToggled: AppContext.pluginModel.setEnabled(index, checked)
                     }
                 }
                 Label {

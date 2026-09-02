@@ -19,10 +19,33 @@ How to see it working at the end: on the tablet (or the Mac), the Live tab strea
 - [ ] Milestone 2 (gated: Gemma `.gguf` download): AI analyst field acceptance.
 - [ ] Milestone 3 (gated: ESP32 bridge + AS7265x and/or Geiger tube on the desk): live hardware over BLE.
 - [ ] Milestone 4 (gated: Qt for Android kit + physical tablet): Android tablet bring-up.
+- [x] (2026-09-02) Milestone 5: introduced an `app-core` library shared by the executable and tests.
+- [x] (2026-09-02) Milestone 6: added macOS CI for the normal and bare-machine build axes.
+- [x] (2026-09-02) Milestone 7: added an offscreen QML boot smoke test for the real application shell.
+- [x] (2026-09-02) Milestone 8: bundled the user manual as an in-app Help page.
+- [x] (2026-09-02) Milestone 9: property-tested `BridgeFrameParser` recovery and corruption handling.
+- [x] (2026-09-02) Milestone 10: unified user-facing notifications through one C++ `AppNotifier` and QML toast.
+- [x] (2026-09-02) Milestone 11: migrated QML context properties to registered singleton facades and eliminated the actionable QML layout-warning baseline.
+- [x] (2026-09-02) Milestone 12: encapsulated `DatabaseManager`'s DAO members behind accessors.
+- [x] (2026-09-02) Milestone 13: added an ASan/UBSan CMake preset and proved the test suite with it.
+- [x] (2026-09-02) Milestone 14: added an interactive nearest-point cursor readout to `SpectrumView`.
 
 ## Surprises & Discoveries
 
-- (None yet — to be filled during implementation.)
+- A corrupt but plausible bridge length can be more damaging than a corrupt
+  magic byte: the old parser waited indefinitely for the claimed payload and
+  could swallow a later valid frame. Recovery now scans for the next complete,
+  self-consistent header before deciding to wait.
+- Moving QObject-heavy services into a static archive means their moc output
+  must remain part of the shared target. Linking the app and tests to one
+  `app-core` target exposed incomplete pointer types in the scene-graph item
+  headers; including the full service definitions satisfied Qt 6's moc checks.
+- `qmlRegisterSingletonInstance` fixes runtime structure but does not emit a
+  module description for static tools. A tooling-only `plugins.qmltypes`
+  manifest and import path are required for `qmllint` and editor completion.
+- A real-shell smoke test must isolate storage as well as render offscreen.
+  `SOLIDBROCCOLI_QML_SMOKE` redirects the app-data root to a temporary directory
+  so CI never opens or mutates a developer database.
 
 ## Decision Log
 
@@ -35,14 +58,42 @@ How to see it working at the end: on the tablet (or the Mac), the Live tab strea
 - Decision: The hardening backlog stays a backlog (recorded, not scheduled) rather than becoming milestones 5–14.
   Rationale: Each item becomes a milestone only when the maintainer takes it; pre-scheduling ten refactors would recreate the perpetually-open-plan problem this split exists to solve.
   Date/Author: 2026-07-05 / Claude
+- Decision: Promote all ten hardening candidates to active Milestones 5–14 and
+  include the known actionable QML layout-warning cleanup in Milestone 11.
+  Rationale: The maintainer explicitly requested every recorded improvement on
+  2026-09-02. The work is independent of the four external gates and can be
+  implemented and verified on the development Mac now.
+  Date/Author: 2026-09-02 / Codex + maintainer
+- Decision: Keep singleton ownership in the C++ composition root and publish a
+  typed `AppContext` facade rather than making QML construct application
+  services.
+  Rationale: the models and services have database, device, and pipeline
+  dependencies that only `main.cpp` can compose safely. Registered instances
+  preserve that lifetime while eliminating untyped context properties.
+  Date/Author: 2026-09-02 / Codex
+- Decision: Make the QML smoke check an execution mode of the shipped app.
+  Rationale: a synthetic engine test can drift from resource registration and
+  singleton composition. Launching `QML_ML_Camera_App` itself exercises the
+  exact qrc, registrations, and root component users receive.
+  Date/Author: 2026-09-02 / Codex
+- Decision: Cursor candidates use the same deterministic `PeakMatcher` and
+  grid-dependent tolerance as saved-capture reporting.
+  Rationale: a field readout must not invent a second identification rule, and
+  the cursor stays informative without involving the optional language model.
+  Date/Author: 2026-09-02 / Codex
 
 ## Outcomes & Retrospective
 
 - (2026-07-05) Plan authored; no milestone started — all four are gated and their gates are currently closed.
+- (2026-09-02) All ungated engineering-hardening work is complete. Application
+  logic has a shared target; builds, QML boot, parser recovery, notification
+  flow, and cursor behavior have executable coverage; CI proves both dependency
+  axes; the manual is available in the instrument. Milestones 1–4 remain open
+  solely because their explicit external gates are still closed.
 
 ## Context and Orientation
 
-The repository root contains `QML_ML_Camera/`, built with CMake into nine targets. The ones this plan touches: `spectro-core` (shared library: analysis math, the sensor device stack — byte transports, sans-IO protocol codecs, devices — and `BleTransport`), `spectro-sim` (shared library: physics-based simulated devices and `SimulatedBridgeTransport`, a byte-level impersonation of the real bridge), `camera-core` (SQLite persistence and `StorageLocations`, which puts all app data under the platform `AppDataLocation`), `plugins/objectdetect` (an optional plugin built only when ONNX Runtime is found; loaded at runtime from `app/vision/`), `ai-core` (an optional static library wrapping llama.cpp, pinned tag `b6100`, built unless `-DAI_ANALYST=OFF`), and the executable `QML_ML_Camera_App` in `QML_ML_Camera/app/` (services, QML shell). Architecture diagrams live in `docs/ARCHITECTURE.md`; user-facing behavior in `docs/USER_MANUAL.md`.
+The repository root contains `QML_ML_Camera/`, built with CMake into ten targets. The ones this plan touches: `spectro-core` (shared library: analysis math, the sensor device stack — byte transports, sans-IO protocol codecs, devices — and `BleTransport`), `spectro-sim` (shared library: physics-based simulated devices and `SimulatedBridgeTransport`, a byte-level impersonation of the real bridge), `camera-core` (SQLite persistence and `StorageLocations`, which puts all app data under the platform `AppDataLocation`), `app-core` (static library: application services, singleton facades, and render adapters shared by the executable and tests), `plugins/objectdetect` (an optional plugin built only when ONNX Runtime is found; loaded at runtime from `app/vision/`), `ai-core` (an optional static library wrapping llama.cpp, pinned tag `b6100`, built unless `-DAI_ANALYST=OFF`), and the executable `QML_ML_Camera_App` in `QML_ML_Camera/app/` (QML shell and composition root). Architecture diagrams live in `docs/ARCHITECTURE.md`; user-facing behavior in `docs/USER_MANUAL.md`.
 
 Terms used below. A "sans-IO codec" is a parser class that translates bytes into readings and commands into bytes but never touches a socket or radio itself — transports move the bytes. "GATT" is the Bluetooth Low Energy attribute protocol: a peripheral offers "services" (grouped by UUID) containing "characteristics" you can write to or subscribe to ("notifications"). An "ONNX" file is a portable neural-network graph executed here by ONNX Runtime; "YOLO" is a family of object-detection networks. A "GGUF" file is a quantized large-language-model container executed by llama.cpp. "Gated" means: requires something not in the repository (hardware, a downloaded file, a toolchain); the gate's absence must never fail a build or test.
 
@@ -51,10 +102,16 @@ Build, run, test (from the repository root; Qt 6.11 via Homebrew at `/opt/homebr
     cmake -S QML_ML_Camera -B QML_ML_Camera/build
     cmake --build QML_ML_Camera/build -j
     ctest --test-dir QML_ML_Camera/build --output-on-failure
-    /opt/homebrew/opt/qt/bin/qmllint QML_ML_Camera/app/*.qml
+    /opt/homebrew/opt/qt/bin/qmllint -I QML_ML_Camera/qmltypes QML_ML_Camera/app/*.qml
     ./QML_ML_Camera/build/app/QML_ML_Camera_App.app/Contents/MacOS/QML_ML_Camera_App
 
-The suite is 21 test executables and must stay 100% green throughout, including on a machine with no ONNX Runtime and no llama.cpp (`-DCMAKE_IGNORE_PATH="/opt/homebrew/include;/opt/homebrew/lib"` simulates the former on the dev Mac — note that overriding CMake find variables to `NOTFOUND` does *not* work, CMake re-searches; `-DAI_ANALYST=OFF` disables the latter).
+The suite is 25 CTest cases in the AI-disabled build, plus the gated AI case
+when that target is enabled, and must stay 100% green throughout. This includes
+the real-shell QML boot and `qmllint` checks. A machine with no ONNX Runtime and
+no llama.cpp is simulated with
+`-DCMAKE_IGNORE_PATH="/opt/homebrew/include;/opt/homebrew/lib"` and
+`-DAI_ANALYST=OFF` (overriding individual find variables to `NOTFOUND` does
+not work because CMake re-searches).
 
 **The bridge wire contract** (authoritative header: `QML_ML_Camera/spectro-core/BridgeContract.h`; the firmware for Milestone 3 must implement it). The peripheral advertises service UUID `5B0C0001-8E2B-4D8B-9C60-0A5B3D1EAD01` with two characteristics: data `5B0C0002-8E2B-4D8B-9C60-0A5B3D1EAD01` (notify) and control `5B0C0003-8E2B-4D8B-9C60-0A5B3D1EAD01` (write). Every data frame is: u32 little-endian payload-plus-header length, then magic `EC 5B` (0x5BEC), version `01`, a frame-type byte, then the payload. Spectrum frames (type `01`): u8 channel count (`12` hex = 18), u32 timestamp in ms, then 18 × float32 little-endian counts — the channel wavelengths are fixed by the AS7265x hardware (410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940 nm; the codec owns this table). Geiger frames (type `02`): u32 timestamp, float32 counts-per-second. Commands written to the control characteristic: `01` start streaming, `02` stop, `03` + u16 LE integration-time ms + u8 averaging count. Notifications may be chunked to any MTU (the parser reassembles; 20-byte chunks are the worst case and what the simulator emits); the parser resynchronizes byte-wise after corruption by trusting a frame only when length, magic, and version agree at the same offset. `SimulatedBridgeTransport` in `spectro-sim` plus the byte-level tests `tst_as7265xcodec` and `tst_geiger` are the executable specification: firmware that satisfies them satisfies the app.
 
@@ -101,13 +158,23 @@ Scope when unblocked: a CMake preset (or documented `qt-cmake` invocation) for t
 
 Acceptance: the app installs and launches on the tablet; the Live tab streams the mercury-lamp simulator at interactive frame rates; permission prompts appear at first camera/Bluetooth use and denial degrades gracefully; the six-tab layout and side panel render correctly in both orientations; and whichever of Milestones 1–3's gates are open pass their acceptances on the device.
 
-### Hardening backlog (recorded, not scheduled — promoted to milestones on explicit request)
+### Hardening milestones 5–14 (promoted on explicit request)
 
-Candidates in recommended order, moved from the tricorder plan's Revision 4 reflection. Each becomes a milestone only when explicitly taken; none is implied by this plan's existence.
+On 2026-09-02 the maintainer explicitly requested implementation of the complete
+hardening backlog. The numbered items below are therefore active Milestones
+5–14 in the same order. Each milestone retains its original scope and gains the
+standing acceptance gate: configure, build, run the complete CTest suite, and
+introduce no new actionable `qmllint` warnings. The layout-warning cleanup that
+was identified after the original backlog was written is included in Milestone
+11 because singleton registration makes `qmllint` useful enough to distinguish
+real layout findings from unresolved context-property noise.
+
+Milestones in implementation order, moved from the tricorder plan's Revision 4
+reflection and activated by the maintainer's 2026-09-02 request:
 
 1. **`app-core` static library** — move the app-layer services and models that tests currently recompile source-by-source (`SpectrometerService`, `GeigerService`, `SpectrumOverlayProcessor`, `PluginManager`, `DetectionModel`, `ReportContextBuilder`, `PeakListModel`, `CaptureCoordinator`) into a static library linked by both the app and the tests. Removes six per-test recompiles, guarantees the tests exercise the shipped object code, and simplifies `QML_ML_Camera/tests/CMakeLists.txt`. Mechanical, low risk.
 2. **CI workflow** — GitHub Actions on a macOS runner: configure, build, ctest, qmllint; plus a second job proving the bare-machine rule continuously (`CMAKE_IGNORE_PATH` hiding Homebrew, `-DAI_ANALYST=OFF`). Turns the founding rule from discipline into machinery.
-3. **QML boot smoke test** — a ctest that runs the real `QQmlApplicationEngine` with all context properties under `QT_QPA_PLATFORM=offscreen` and asserts `main.qml` loads with zero warnings. Covers the one regression class the unit tests cannot see — broken bindings, missing context properties, qrc omissions; exactly the `autoOrientation` failure mode in the tricorder plan's Surprises log.
+3. **QML boot smoke test** — a ctest that runs the real `QQmlApplicationEngine` with all registered singletons under `QT_QPA_PLATFORM=offscreen` and asserts `main.qml` loads with zero warnings. Covers the one regression class the unit tests cannot see — broken bindings, missing registrations, qrc omissions; exactly the `autoOrientation` failure mode in the tricorder plan's Surprises log.
 4. **In-app Help** — bundle `docs/USER_MANUAL.md` into resources and render it in a `TextArea` (`TextEdit.MarkdownText`) behind a Settings row. One source with the repo manual; a field instrument must not require a laptop to read its own manual.
 5. **`BridgeFrameParser` fuzz/property test** — seeded random byte streams and systematic single-byte corruptions; invariants: never crashes, every intact frame embedded in noise is eventually recovered, resync cost bounded. Pure code, cheap, and the right insurance before Milestone 3's first contact with real firmware.
 6. **Notification unification** — one C++ `AppNotifier` (info/warning/error) plus one toast overlay in `main.qml`, replacing the per-page error toasts that grew page by page. Consistent UX, less QML duplication.
@@ -129,14 +196,14 @@ All commands run from the repository root. The standing loop after any change:
     cmake -S QML_ML_Camera -B QML_ML_Camera/build
     cmake --build QML_ML_Camera/build -j
     ctest --test-dir QML_ML_Camera/build --output-on-failure
-    /opt/homebrew/opt/qt/bin/qmllint QML_ML_Camera/app/*.qml
+    /opt/homebrew/opt/qt/bin/qmllint -I QML_ML_Camera/qmltypes QML_ML_Camera/app/*.qml
     ./QML_ML_Camera/build/app/QML_ML_Camera_App.app/Contents/MacOS/QML_ML_Camera_App
 
 Model acquisition commands are inside Milestones 1–2. Update this plan's `Progress`, `Surprises & Discoveries`, and `Decision Log` at every stopping point; commit at milestone boundaries with the milestone name in the message. The four project subagents in `.claude/agents/` (`spectro-architect`, `spectro-builder`, `spectro-scientist`, `spectro-reviewer`) apply to this plan exactly as they did to its predecessor; this plan is the source of truth they defer to.
 
 ## Validation and Acceptance
 
-Per milestone, as written in each. Whole-plan end state: with all four gates opened at least once, the instrument has been observed doing real work — real boxes from a real camera scene, a real grounded report from a real model, real spectra and real counts from a real bridge, all of it on a physical tablet — while a bare clone with no models, no ONNX Runtime, no llama.cpp, and no hardware still configures, builds, and passes the entire suite. The hardening backlog has either been promoted through explicit maintainer requests (each then carrying its own acceptance) or remains recorded and untouched.
+Per milestone, as written in each. Whole-plan end state: with all four gates opened at least once, the instrument has been observed doing real work — real boxes from a real camera scene, a real grounded report from a real model, real spectra and real counts from a real bridge, all of it on a physical tablet — while a bare clone with no models, no ONNX Runtime, no llama.cpp, and no hardware still configures, builds, and passes the entire suite. The complete hardening backlog was promoted and completed on 2026-09-02.
 
 ## Idempotence and Recovery
 
@@ -148,6 +215,31 @@ Expected bridge data frames (Milestone 3, little-endian throughout): a spectrum 
 
 Log lines that prove wiring during the milestones (CSV logs under `~/Library/Application Support/SolidBroccoli/SolidBroccoli/logs/`): "Vision: detection plugin loaded" (Milestone 1 precondition), "SpectrometerService: 3 device(s) available." growing to 4+ after a successful scan (Milestone 3), and the report-persistence lines from `ReportService` (Milestone 2).
 
+Hardening evidence (Milestones 5–14): `tst_qml_boot` loads the shipped shell
+offscreen with no engine warnings; `tst_bridgeframeparser`, `tst_appnotifier`,
+and `tst_spectrumview` cover the new parser, notification, and cursor contracts;
+the `asan-ubsan` preset and a scratch bare-machine build both pass the complete
+AI-disabled suite; `qmllint -I QML_ML_Camera/qmltypes` reports zero import,
+unresolved-type, missing-property, or layout-positioning warnings.
+
+Final local results on 2026-09-02: normal AI-enabled build **26/26** CTest
+cases passed; ASan/UBSan AI-disabled build **25/25** passed; scratch
+bare-machine AI-disabled build with ONNX Runtime hidden **25/25** passed. The
+remaining static QML baseline is 141 pre-existing parent/delegate
+`[unqualified]` warnings, down from roughly 387; all 29 actionable layout
+warnings are gone.
+
 ## Interfaces and Dependencies
 
 Nothing in Milestones 1–3 adds a dependency: ONNX Runtime and llama.cpp integration exist and stay build-time optional; the models are user-supplied files. Milestone 4 adds the Qt for Android kit (Qt 6.11 for Android, JDK, Android SDK/NDK) on the development machine only, an Android-capable ONNX Runtime distribution for the plugin if detection is wanted on the tablet, and no new runtime services. The wire contract in `QML_ML_Camera/spectro-core/BridgeContract.h` is frozen: firmware conforms to it, not the other way around — extending it (new frame types) bumps the version byte and gets its own plan revision. The `FrameProcessor` plugin interface stays at IID `broccoli.FrameProcessor/1.1`; static linking on Android must not fork it.
+
+Revision note (2026-09-02): Revision 1. The maintainer explicitly activated
+the complete engineering-hardening backlog. It is now tracked as Milestones
+5–14; Milestone 11 also owns the already-recorded actionable QML layout-warning
+cleanup because the singleton migration removes the largest source of lint
+noise. Reason: implement all repository improvements that do not depend on
+models, physical sensors, or an Android toolchain.
+
+Revision note (2026-09-02): Revision 2. Milestones 5–14 are complete and their
+implementation decisions, discoveries, validation surfaces, and artifacts are
+recorded. The four model/hardware/toolchain-gated milestones remain open.

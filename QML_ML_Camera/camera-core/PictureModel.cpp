@@ -25,8 +25,8 @@ QModelIndex PictureModel::addPicture(const Picture& _picture)
     int rows = rowCount();
     beginInsertRows(QModelIndex(), rows, rows);
     unique_ptr<Picture>newPicture(new Picture(_picture));
-    m_sqlDB.m_pictureDao.addPictureInAlbum(m_nAlbumID, *newPicture);
-    m_vPictures->push_back(move(newPicture));
+    m_sqlDB.pictureDao().addPictureInAlbum(m_nAlbumID, *newPicture);
+    m_vPictures->push_back(std::move(newPicture));
     endInsertRows();
     qDebug(logWarning()) << "index of the picture: " << rows;
     return index(rows, 0);
@@ -48,7 +48,7 @@ void PictureModel::addPictureToAlbum(int _nAlbumID, const QUrl& _FileUrl)
     // A different album: insert straight through the DAO, leaving the
     // currently loaded album's rows untouched.
     Picture picture(_FileUrl);
-    m_sqlDB.m_pictureDao.addPictureInAlbum(_nAlbumID, picture);
+    m_sqlDB.pictureDao().addPictureInAlbum(_nAlbumID, picture);
     qDebug(logInfo()) << "Picture filed into album" << _nAlbumID << ":"
                       << _FileUrl.toString();
 }
@@ -103,7 +103,7 @@ bool PictureModel::removeRows(int _row, int _count, const QModelIndex& parent)
     int countLeft = _count;
     while(countLeft--) {
         const Picture& picture = *m_vPictures->at(_row + countLeft);
-        m_sqlDB.m_pictureDao.removePicture(picture._nPictureID());
+        m_sqlDB.pictureDao().removePicture(picture._nPictureID());
     }
     m_vPictures->erase(m_vPictures->begin() + _row,
                     m_vPictures->begin() + _row + _count);
@@ -136,7 +136,7 @@ void PictureModel::clearAlbum()
 
 void PictureModel::deletePicturesForAlbum()
 {
-    m_sqlDB.m_pictureDao.removePicturesForAlbum(m_nAlbumID);
+    m_sqlDB.pictureDao().removePicturesForAlbum(m_nAlbumID);
     clearAlbum();
 }
 
@@ -146,7 +146,7 @@ void PictureModel::loadPictures(int _nAlbumID)
         m_vPictures.reset(new vector<unique_ptr<Picture>>());
         return;
     }
-    m_vPictures = m_sqlDB.m_pictureDao.picturesForAlbum(_nAlbumID);
+    m_vPictures = m_sqlDB.pictureDao().picturesForAlbum(_nAlbumID);
 }
 
 bool PictureModel::isIndexValid(const QModelIndex& _index) const

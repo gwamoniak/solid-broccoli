@@ -3,32 +3,8 @@ qt_add_executable(QML_ML_Camera_App
     main.cpp
     AppSettings.cpp
     AppSettings.h
-    CameraService.cpp
-    CameraService.h
-    CaptureCoordinator.cpp
-    CaptureCoordinator.h
-    DetectionModel.cpp
-    DetectionModel.h
-    FrameProcessingWorker.cpp
-    FrameProcessingWorker.h
-    GeigerService.cpp
-    GeigerService.h
-    PluginManager.cpp
-    PluginManager.h
-    StripChartView.cpp
-    StripChartView.h
     PictureProvider.cpp
     PictureProvider.h
-    ReportContextBuilder.cpp
-    ReportContextBuilder.h
-    PeakListModel.cpp
-    PeakListModel.h
-    SpectrometerService.cpp
-    SpectrometerService.h
-    SpectrumOverlayProcessor.cpp
-    SpectrumOverlayProcessor.h
-    SpectrumView.cpp
-    SpectrumView.h
 )
 
 qt_add_resources(QML_ML_Camera_App app_resources
@@ -39,14 +15,13 @@ qt_add_resources(QML_ML_Camera_App app_resources
         AnalysisPanel.qml
         CameraPage.qml
         GeigerPage.qml
+        HelpPage.qml
         InputDialog.qml
         LivePage.qml
         LoggerPage.qml
-        MainPage.qml
         MovieAlbumPage.qml
         MoviePage.qml
         NavPage.qml
-        PageTheme.qml
         PicturePage.qml
         SaveCaptureDialog.qml
         SessionDetailPage.qml
@@ -55,7 +30,7 @@ qt_add_resources(QML_ML_Camera_App app_resources
         SettingSwitcher.qml
         Style.qml
         Theme.qml
-        ToolBarTheme.qml
+        ToastOverlay.qml
         main.qml
         prompts/report_v1.md
         qmldir
@@ -77,6 +52,12 @@ qt_add_resources(QML_ML_Camera_App app_resources
         images/svg/spectrum.svg
 )
 
+qt_add_resources(QML_ML_Camera_App help_resources
+    PREFIX /docs
+    BASE ${CMAKE_SOURCE_DIR}/../docs
+    FILES ${CMAKE_SOURCE_DIR}/../docs/USER_MANUAL.md
+)
+
 target_link_libraries(QML_ML_Camera_App
     PRIVATE
         Qt6::Core
@@ -87,11 +68,7 @@ target_link_libraries(QML_ML_Camera_App
         Qt6::Sql
         Qt6::Svg
         Qt6::Multimedia
-        camera-core
-        logger-core
-        processor-api
-        spectro-core
-        spectro-sim
+        app-core
 )
 
 # Build the proof plugin alongside the app so it lands in app/plugins/ and is

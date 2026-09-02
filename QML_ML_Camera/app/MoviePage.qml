@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtMultimedia
@@ -30,7 +31,7 @@ NavPage {
                 background: null
                 onClicked: {
                     player.stop()
-                    movieModel.removeRows(movieIndex, 1)
+                    AppContext.movieModel.removeRows(movieIndex, 1)
                     if (owningStack) owningStack.pop()
                 }
             }
@@ -120,7 +121,7 @@ NavPage {
         hint: movieName
         onAccepted: {
             editText.focus = false
-            movieModel.rename(movieIndex, editText.text)
+            AppContext.movieModel.rename(movieIndex, editText.text)
             movieName = editText.text
         }
     }

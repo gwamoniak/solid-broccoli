@@ -19,7 +19,7 @@ void SessionSpectrumModel::setSessionId(int sessionId)
 {
     beginResetModel();
     m_sessionId = sessionId;
-    m_entries = sessionId >= 0 ? m_sqlDB.m_spectrumDao.spectra(sessionId)
+    m_entries = sessionId >= 0 ? m_sqlDB.spectrumDao().spectra(sessionId)
                                : QVector<SpectrumEntry>();
     endResetModel();
 }
@@ -28,7 +28,7 @@ void SessionSpectrumModel::rename(int row, const QString& name)
 {
     if (row < 0 || row >= m_entries.size())
         return;
-    m_sqlDB.m_spectrumDao.rename(m_entries[row].id, name);
+    m_sqlDB.spectrumDao().rename(m_entries[row].id, name);
     m_entries[row].name = name;
     emit dataChanged(index(row), index(row));
 }
@@ -39,7 +39,7 @@ bool SessionSpectrumModel::removeRows(int row, int count, const QModelIndex& par
         return false;
     beginRemoveRows(parent, row, row + count - 1);
     for (int i = 0; i < count; ++i) {
-        m_sqlDB.m_spectrumDao.removeSpectrum(m_entries[row].id);
+        m_sqlDB.spectrumDao().removeSpectrum(m_entries[row].id);
         m_entries.removeAt(row);
     }
     endRemoveRows();
@@ -49,7 +49,7 @@ bool SessionSpectrumModel::removeRows(int row, int count, const QModelIndex& par
 int SessionSpectrumModel::addSpectrum(int sessionId, const Spectrum& spectrum,
                                       const QString& name, const QString& tags)
 {
-    const int id = m_sqlDB.m_spectrumDao.addSpectrum(sessionId, spectrum, name, tags);
+    const int id = m_sqlDB.spectrumDao().addSpectrum(sessionId, spectrum, name, tags);
     if (sessionId == m_sessionId)
         setSessionId(m_sessionId);  // reload the visible list
     return id;
@@ -58,7 +58,7 @@ int SessionSpectrumModel::addSpectrum(int sessionId, const Spectrum& spectrum,
 QVariantList SessionSpectrumModel::sessionVideos(int sessionId) const
 {
     QVariantList list;
-    for (const SessionVideoRecord& video : m_sqlDB.m_sessionDao.videos(sessionId)) {
+    for (const SessionVideoRecord& video : m_sqlDB.sessionDao().videos(sessionId)) {
         list.append(QVariantMap{
             {QStringLiteral("name"), QFileInfo(video.filepath).fileName()},
             {QStringLiteral("path"), video.filepath},
@@ -71,7 +71,7 @@ QVariantList SessionSpectrumModel::sessionVideos(int sessionId) const
 QVariantList SessionSpectrumModel::sessionMeasurements(int sessionId) const
 {
     QVariantList list;
-    for (const MeasurementRecord& m : m_sqlDB.m_measurementDao.measurements(sessionId)) {
+    for (const MeasurementRecord& m : m_sqlDB.measurementDao().measurements(sessionId)) {
         list.append(QVariantMap{
             {QStringLiteral("id"), m.id},
             {QStringLiteral("type"), m.type},
@@ -87,7 +87,7 @@ QVariantList SessionSpectrumModel::sessionMeasurements(int sessionId) const
 QVariantList SessionSpectrumModel::sessionReports(int sessionId) const
 {
     QVariantList list;
-    for (const ReportRecord& report : m_sqlDB.m_reportDao.reports(sessionId)) {
+    for (const ReportRecord& report : m_sqlDB.reportDao().reports(sessionId)) {
         list.append(QVariantMap{
             {QStringLiteral("id"), report.id},
             {QStringLiteral("createdUtc"), report.createdUtc},
@@ -100,7 +100,7 @@ QVariantList SessionSpectrumModel::sessionReports(int sessionId) const
 
 bool SessionSpectrumModel::exportReportMarkdown(int reportId) const
 {
-    const ReportRecord report = m_sqlDB.m_reportDao.reportById(reportId);
+    const ReportRecord report = m_sqlDB.reportDao().reportById(reportId);
     if (report.id < 0)
         return false;
 
@@ -117,13 +117,13 @@ bool SessionSpectrumModel::exportReportMarkdown(int reportId) const
 
 bool SessionSpectrumModel::removeReport(int reportId) const
 {
-    m_sqlDB.m_reportDao.removeReport(reportId);
+    m_sqlDB.reportDao().removeReport(reportId);
     return true;
 }
 
 SpectrumEntry SessionSpectrumModel::entryById(int id) const
 {
-    return m_sqlDB.m_spectrumDao.spectrumById(id);
+    return m_sqlDB.spectrumDao().spectrumById(id);
 }
 
 int SessionSpectrumModel::rowCount(const QModelIndex& parent) const

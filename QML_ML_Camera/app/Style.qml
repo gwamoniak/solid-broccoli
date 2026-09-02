@@ -25,7 +25,7 @@ QtObject {
     property int roundButtonHeight: 44
     property int roundButtonRadius: 22
     property color roundButtonRed:    Theme.destructive
-    property color roundButtonYellow: "#FFCA35"
+    property color roundButtonYellow: Theme.accent
     property color roundButtonGreen:  Theme.accent
     property color roundButtonHome:   Theme.accent
 }

@@ -24,9 +24,9 @@ Dialog {
     }
 
     background: Rectangle {
-        color: "#1f1f1f"
+        color: Theme.surfaceElevated
         radius: 6
-        border.color: "#555555"
+        border.color: Theme.separator
     }
 
     contentItem: ColumnLayout {

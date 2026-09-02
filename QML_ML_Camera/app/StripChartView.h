@@ -6,7 +6,7 @@
 #include <QQuickItem>
 #include <QVector>
 
-class GeigerService;
+#include "GeigerService.h"
 
 // Scrolling time-series plot for the radiation dose rate: hairline grid,
 // yellow trace, red horizontal line at the alert threshold. Scene-graph

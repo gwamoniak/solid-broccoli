@@ -74,7 +74,7 @@ unique_ptr<vector<unique_ptr<Picture>>> PictureDAO::picturesForAlbum(int _nAlbum
         picture->set_nPictureID(query.value("id").toInt());
         picture->set_nAlbumID(query.value("album_id").toInt());
         picture->set_FileUrl(query.value("url").toUrl());
-        list->push_back(move(picture));
+        list->push_back(std::move(picture));
     }
     return list;
 }

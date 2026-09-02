@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Layouts
 import QtQuick.Controls
 import "."
@@ -9,14 +10,14 @@ NavPage {
     pageTitle: qsTr("Sessions")
     showLargeTitle: true
 
-    StackView.onActivating: sessionModel.refresh()
+    StackView.onActivating: AppContext.sessionModel.refresh()
 
     ListView {
         id: sessionList
         anchors.fill: parent
         anchors.margins: Theme.screenMargin
         spacing: 10
-        model: sessionModel
+        model: AppContext.sessionModel
         boundsBehavior: Flickable.StopAtBounds
         clip: true
 

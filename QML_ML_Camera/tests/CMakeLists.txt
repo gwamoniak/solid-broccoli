@@ -3,6 +3,20 @@
 #     ctest --output-on-failure
 find_package(Qt6 REQUIRED COMPONENTS Test)
 
+find_program(QMLLINT_EXECUTABLE NAMES qmllint HINTS "${QT_HOST_PATH}/bin")
+if(QMLLINT_EXECUTABLE)
+    file(GLOB APP_QML_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/app/*.qml")
+    add_test(NAME tst_qmllint
+        COMMAND "${QMLLINT_EXECUTABLE}"
+                -I "${CMAKE_SOURCE_DIR}/qmltypes"
+                ${APP_QML_SOURCES})
+endif()
+
+add_test(NAME tst_qml_boot
+    COMMAND $<TARGET_FILE:QML_ML_Camera_App> -platform offscreen)
+set_tests_properties(tst_qml_boot PROPERTIES
+    ENVIRONMENT "SOLIDBROCCOLI_QML_SMOKE=1")
+
 # Declare a guiless Qt Test executable over camera-core and register it as a
 # CTest case. Extra sources/args follow the name.
 function(add_camera_test name)
@@ -30,15 +44,12 @@ target_link_libraries(tst_codecdevice PRIVATE spectro-core)
 add_camera_test(tst_spectrosim tst_spectrosim.cpp)
 target_link_libraries(tst_spectrosim PRIVATE spectro-core spectro-sim)
 
-# SpectrometerService lives in the app target; compile its sources into the
-# test directly (same pattern as tst_pluginmanager).
+# Application services are shared through app-core.
 add_camera_test(tst_spectrometerservice
     tst_spectrometerservice.cpp
-    ${CMAKE_SOURCE_DIR}/app/SpectrometerService.cpp
-    ${CMAKE_SOURCE_DIR}/app/PeakListModel.cpp
 )
 target_include_directories(tst_spectrometerservice PRIVATE ${CMAKE_SOURCE_DIR}/app)
-target_link_libraries(tst_spectrometerservice PRIVATE spectro-core spectro-sim)
+target_link_libraries(tst_spectrometerservice PRIVATE app-core)
 
 # Session persistence + export (Milestone 7).
 add_camera_test(tst_sessiondao tst_sessiondao.cpp)
@@ -49,41 +60,42 @@ target_link_libraries(tst_spectrumexporter PRIVATE spectro-core spectro-sim)
 # Bridge contract codec + simulated bridge byte path (Milestone 9).
 add_camera_test(tst_as7265xcodec tst_as7265xcodec.cpp)
 target_link_libraries(tst_as7265xcodec PRIVATE spectro-core spectro-sim)
+add_camera_test(tst_bridgeframeparser tst_bridgeframeparser.cpp)
+target_link_libraries(tst_bridgeframeparser PRIVATE spectro-core)
+add_camera_test(tst_appnotifier tst_appnotifier.cpp)
+target_link_libraries(tst_appnotifier PRIVATE app-core)
+add_camera_test(tst_spectrumview tst_spectrumview.cpp)
+target_link_libraries(tst_spectrumview PRIVATE app-core Qt6::Quick)
 
 # Geiger modality (Milestone 10): Poisson ground truth, rolling CPM/dose,
-# codec dispatch, bridge byte path, MeasurementDAO, and the service
-# (compiled in like tst_spectrometerservice).
+# codec dispatch, bridge byte path, MeasurementDAO, and the service.
 add_camera_test(tst_geiger
     tst_geiger.cpp
-    ${CMAKE_SOURCE_DIR}/app/GeigerService.cpp
 )
 target_include_directories(tst_geiger PRIVATE ${CMAKE_SOURCE_DIR}/app)
-target_link_libraries(tst_geiger PRIVATE spectro-core spectro-sim)
+target_link_libraries(tst_geiger PRIVATE app-core)
 
-# Video overlay processor (Milestone 8); compiled in like tst_pluginmanager.
+# Video overlay processor (Milestone 8).
 add_camera_test(tst_spectrumoverlay
     tst_spectrumoverlay.cpp
-    ${CMAKE_SOURCE_DIR}/app/SpectrumOverlayProcessor.cpp
 )
 target_include_directories(tst_spectrumoverlay PRIVATE
     ${CMAKE_SOURCE_DIR}/app
     ${CMAKE_SOURCE_DIR}/processor-api
 )
-target_link_libraries(tst_spectrumoverlay PRIVATE spectro-core spectro-sim)
+target_link_libraries(tst_spectrumoverlay PRIVATE app-core)
 add_camera_test(tst_albummodel      tst_albummodel.cpp)
 add_camera_test(tst_picturemodel    tst_picturemodel.cpp)
 
-# PluginManager lives in the app target, so compile its source straight into the
-# test and point it at the freshly built grayscale plugin via a define.
+# Point the shared PluginManager at the freshly built grayscale plugin.
 add_camera_test(tst_pluginmanager
     tst_pluginmanager.cpp
-    ${CMAKE_SOURCE_DIR}/app/PluginManager.cpp
 )
 target_include_directories(tst_pluginmanager PRIVATE
     ${CMAKE_SOURCE_DIR}/app
     ${CMAKE_SOURCE_DIR}/processor-api
 )
-target_link_libraries(tst_pluginmanager PRIVATE processor-api)
+target_link_libraries(tst_pluginmanager PRIVATE app-core)
 add_dependencies(tst_pluginmanager grayscale-processor)
 target_compile_definitions(tst_pluginmanager PRIVATE
     GRAYSCALE_PLUGIN_DIR="$<TARGET_FILE_DIR:grayscale-processor>"
@@ -95,13 +107,12 @@ add_camera_test(tst_peakmatcher tst_peakmatcher.cpp)
 target_link_libraries(tst_peakmatcher PRIVATE spectro-core spectro-sim)
 add_camera_test(tst_reportcontext
     tst_reportcontext.cpp
-    ${CMAKE_SOURCE_DIR}/app/ReportContextBuilder.cpp
 )
 target_include_directories(tst_reportcontext PRIVATE
     ${CMAKE_SOURCE_DIR}/app
     ${CMAKE_SOURCE_DIR}/processor-api
 )
-target_link_libraries(tst_reportcontext PRIVATE spectro-core spectro-sim)
+target_link_libraries(tst_reportcontext PRIVATE app-core)
 add_camera_test(tst_reportdao tst_reportdao.cpp)
 target_link_libraries(tst_reportdao PRIVATE spectro-core)
 
@@ -123,13 +134,12 @@ target_include_directories(tst_visionpost PRIVATE
 )
 add_camera_test(tst_pipelinemetadata
     tst_pipelinemetadata.cpp
-    ${CMAKE_SOURCE_DIR}/app/DetectionModel.cpp
 )
 target_include_directories(tst_pipelinemetadata PRIVATE
     ${CMAKE_SOURCE_DIR}/app
     ${CMAKE_SOURCE_DIR}/processor-api
 )
-target_link_libraries(tst_pipelinemetadata PRIVATE processor-api)
+target_link_libraries(tst_pipelinemetadata PRIVATE app-core)
 
 # The grayscale processor is a plugin (MODULE), so compile its source directly
 # into this test to exercise process() without QPluginLoader.

@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -8,7 +9,7 @@ NavPage {
     pageTitle: qsTr("Logger")
 
     Component.onCompleted: {
-        loggerModel.readLatestLog()
+        AppContext.loggerModel.readLatestLog()
     }
 
     trailing: Component {
@@ -18,7 +19,7 @@ NavPage {
             icon.width: 20; icon.height: 20
             background: null
             onClicked: {
-                dialog.currentFolder = logsPath
+                dialog.currentFolder = AppContext.logsUrl
                 dialog.open()
             }
         }
@@ -51,7 +52,7 @@ NavPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            model: loggerModel
+            model: AppContext.loggerModel
 
             delegate: Rectangle {
                 width: logList.width
@@ -74,12 +75,12 @@ NavPage {
     FileDialog {
         id: dialog
         title: qsTr("Open log file")
-        currentFolder: logsPath
+        currentFolder: AppContext.logsUrl
         nameFilters: ["CSV files (*.csv)", "All files (*)"]
         onAccepted: {
             var loggerUrl = dialog.selectedFile.toString()
             loggerUrl = loggerUrl.replace(/^(file:\/{3})/, "")
-            loggerModel.readCSV(loggerUrl)
+            AppContext.loggerModel.readCSV(loggerUrl)
         }
     }
 }

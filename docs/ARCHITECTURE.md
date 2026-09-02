@@ -40,7 +40,7 @@ Three rules shape everything below:
 
 ## 2. Build targets and dependencies
 
-Nine CMake targets. Solid arrows are link-time dependencies; dashed arrows are
+Ten CMake targets. Solid arrows are link-time dependencies; dashed arrows are
 optional or runtime-only relationships.
 
 ```mermaid
@@ -50,10 +50,11 @@ flowchart BT
     spectro["spectro-core<br/>shared - analysis math, device stack, codecs, BLE"]
     sim["spectro-sim<br/>shared - physics synthesis, noise model, fault injection"]
     camera["camera-core<br/>shared - SQLite, DAOs, list models, storage paths"]
+    appcore["app-core<br/>static - services, facades, render adapters"]
     ai["ai-core<br/>static - AiAnalyst over llama.cpp b6100"]
     gray["grayscale-processor<br/>plugin module"]
     det["objectdetect-processor<br/>plugin module - YOLO via ONNX Runtime"]
-    app["QML_ML_Camera_App<br/>services, QML shell, pipeline composition"]
+    app["QML_ML_Camera_App<br/>QML shell and composition root"]
 
     spectro --> logger
     sim --> spectro
@@ -63,11 +64,12 @@ flowchart BT
     det --> papi
     det --> logger
     ai --> logger
-    app --> camera
-    app --> spectro
-    app --> sim
-    app --> papi
-    app --> logger
+    appcore --> camera
+    appcore --> spectro
+    appcore --> sim
+    appcore --> papi
+    appcore --> logger
+    app --> appcore
     app -. "only when AI_ANALYST=ON" .-> ai
     app -. "QPluginLoader, runtime" .-> gray
     app -. "QPluginLoader, runtime" .-> det
@@ -446,9 +448,17 @@ source (`pragma Singleton`, registered in `qmldir`): near-black surfaces, one
 yellow accent `#FFE100`, red strictly for record/radiation-alert/destructive,
 Menlo for numeric readouts. `Style.qml` is a legacy shim onto Theme tokens.
 Custom scene-graph items: `SpectrumView` (grid, traces, overlays, integration
-band, gesture zoom/pan) and `StripChartView` (scrolling dose chart, threshold
+band, gesture zoom/pan, and nearest-point cursor) and `StripChartView` (scrolling dose chart, threshold
 line, compact sparkline mode) — both registered from C++ under
 `solid.broccoli 1.0`.
+
+The composition root registers `AppContext` as the typed facade for models and
+coordinators, plus service singletons such as `SpectrometerService`,
+`GeigerService`, and `CameraService`. `AppNotifier` owns the one global toast
+surface, while `HelpContent` exposes the bundled `USER_MANUAL.md`. The
+tooling-only module description under `QML_ML_Camera/qmltypes/` mirrors this
+runtime surface for `qmllint` and editor completion. `tst_qml_boot` launches
+the actual shell offscreen and fails on engine warnings or an empty root.
 
 ## 10. How to extend
 
@@ -475,12 +485,7 @@ round-trip + cascade test. Old on-disk databases must upgrade in place.
 
 - `camera-core` is really *data-core* — it predates the instrument and keeps
   its name to avoid target churn (Decision Log, 2026-07-03).
-- DAOs are public members of `DatabaseManager` (`db.m_sessionDao…`);
-  encapsulation was traded for momentum. Candidate cleanup in the active
-  plan's hardening backlog
-  ([`SPECTRO_FIELD_READINESS_EXECPLAN.md`](../SPECTRO_FIELD_READINESS_EXECPLAN.md)).
-- Services and models under `app/` are compiled source-by-source into their
-  tests instead of linked from a library; an `app-core` static library is the
-  recorded fix (same backlog).
-- Context properties (not QML singletons) expose the models to QML — invisible
-  to qmllint. Migration to registered singletons is in the backlog.
+- The runtime singleton registrations and the tooling-only `plugins.qmltypes`
+  manifest describe the same public QML API in two forms. Any new registered
+  property or method must update both; the boot smoke test guards runtime
+  wiring and `tst_qmllint` guards the tooling copy.

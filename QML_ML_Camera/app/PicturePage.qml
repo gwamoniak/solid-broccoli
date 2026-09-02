@@ -1,8 +1,10 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Controls
 import "."
 
 NavPage {
+    id: picturePage
     property string pictureName
     property int pictureIndex
 
@@ -24,7 +26,7 @@ NavPage {
                 icon.width: 20; icon.height: 20
                 background: null
                 onClicked: {
-                    pictureModel.removeRows(pictureIndex, 1)
+                    AppContext.pictureModel.removeRows(pictureIndex, 1)
                     if (owningStack) owningStack.pop()
                 }
             }
@@ -33,7 +35,7 @@ NavPage {
 
     ListView {
         id: pictureListView
-        model: pictureModel
+        model: AppContext.pictureModel
         anchors.fill: parent
         spacing: 0
         orientation: Qt.Horizontal
@@ -45,19 +47,18 @@ NavPage {
         }
 
         onMovementEnded: {
-            var item = itemAt(contentX, contentY)
-            if (item) currentIndex = item.itemIndex
-        }
-
-        onCurrentItemChanged: {
-            if (currentItem) {
-                pictureName = currentItem.itemName
-            }
+            const visibleIndex = indexAt(contentX + width / 2, contentY + height / 2)
+            if (visibleIndex >= 0)
+                currentIndex = visibleIndex
         }
 
         delegate: Rectangle {
             property int itemIndex: index
             property string itemName: name
+            ListView.onIsCurrentItemChanged: {
+                if (ListView.isCurrentItem)
+                    picturePage.pictureName = itemName
+            }
 
             width: ListView.view.width === 0 ? parent.width : ListView.view.width
             height: pictureListView.height
@@ -80,7 +81,7 @@ NavPage {
         hint: pictureName
         onAccepted: {
             editText.focus = false
-            pictureModel.rename(pictureIndex, editText.text)
+            AppContext.pictureModel.rename(pictureIndex, editText.text)
             pictureName = editText.text
         }
     }

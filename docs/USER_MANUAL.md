@@ -48,7 +48,9 @@ ever red.
    *Simulated UV-Vis (mercury lamp)* — and a moving yellow trace appears.
 2. Read the strip above the plot: **PEAK λ** should hover at **546.1 nm**
    (the mercury green line), with PEAK / INTEGRATION / FPS beside it.
-3. Zoom with pinch or mouse wheel, pan by dragging, double-press **Hold** to
+3. Hover or tap the trace to inspect the nearest measured wavelength and
+   value; known local peaks also show their deterministic line candidate.
+   Zoom with pinch or mouse wheel, pan by dragging, and use **Hold** to
    freeze/unfreeze without stopping acquisition.
 4. Open the analysis panel (docked on the right at tablet width; the **⋯**
    button opens it as a drawer on narrow windows): the PEAKS list names every
@@ -217,6 +219,9 @@ macOS `~/Library/Application Support/SolidBroccoli/SolidBroccoli/`:
 Deleting the database file resets all app content (photos/videos on disk are
 not deleted, but their catalog is). GGUF models are wherever you stored them —
 the app only keeps a path.
+
+**Can I read this manual offline?** Yes. Settings → **User Manual** opens this
+same file from the app bundle; no browser or network connection is required.
 
 **Something else is wrong.** Read today's CSV log (path above, or Settings →
 the Logger page) — every service logs its decisions, and most support

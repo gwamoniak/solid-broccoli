@@ -90,7 +90,7 @@ void LoggerModel::readCSV(const QString &_fileName)
             data.append(values.at(0));
             data.append(values.at(1));
             data.append(values.at(2));
-            m_sqlDB.m_loggerDao.insertIntoTable(data);
+            m_sqlDB.loggerDao().insertIntoTable(data);
             insertedRows++;
 
         }

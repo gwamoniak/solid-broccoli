@@ -197,20 +197,20 @@ private slots:
         DatabaseManager db(":memory:");
         QVERIFY(db.database().tables().contains("measurements"));
 
-        const int sessionId = db.m_sessionDao.addSession("Radiation survey");
-        const int id = db.m_measurementDao.addMeasurement(
+        const int sessionId = db.sessionDao().addSession("Radiation survey");
+        const int id = db.measurementDao().addMeasurement(
             sessionId, "geiger_dose", 0.32, "uSv/h", R"({"avgCpm":56.1})");
         QVERIFY(id > 0);
 
-        const auto records = db.m_measurementDao.measurements(sessionId);
+        const auto records = db.measurementDao().measurements(sessionId);
         QCOMPARE(records.size(), 1);
         QCOMPARE(records.first().type, QStringLiteral("geiger_dose"));
         QCOMPARE(records.first().value, 0.32);
         QCOMPARE(records.first().unit, QStringLiteral("uSv/h"));
         QCOMPARE(records.first().summary, QStringLiteral(R"({"avgCpm":56.1})"));
 
-        db.m_sessionDao.removeSession(sessionId);
-        QVERIFY(db.m_measurementDao.measurements(sessionId).isEmpty());
+        db.sessionDao().removeSession(sessionId);
+        QVERIFY(db.measurementDao().measurements(sessionId).isEmpty());
     }
 
     void serviceCountsAndSavesMeasurement()
@@ -220,9 +220,9 @@ private slots:
         QCOMPARE(service.availableDevices().size(), 3);
 
         int sessionId = -1;
-        service.setMeasurementStore(&db.m_measurementDao, [&db, &sessionId]() {
+        service.setMeasurementStore(&db.measurementDao(), [&db, &sessionId]() {
             if (sessionId < 0)
-                sessionId = db.m_sessionDao.addSession("Geiger session");
+                sessionId = db.sessionDao().addSession("Geiger session");
             return sessionId;
         });
 
@@ -240,7 +240,7 @@ private slots:
         service.saveMeasurement(QStringLiteral("bench check"), QString());
         QCOMPARE(saved.count(), 1);
 
-        const auto records = db.m_measurementDao.measurements(sessionId);
+        const auto records = db.measurementDao().measurements(sessionId);
         QCOMPARE(records.size(), 1);
         const QJsonObject summary =
             QJsonDocument::fromJson(records.first().summary.toUtf8()).object();
