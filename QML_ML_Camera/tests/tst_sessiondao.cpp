@@ -45,15 +45,15 @@ private slots:
     void addAndReadBackSpectrum()
     {
         DatabaseManager db(":memory:");
-        const int sessionId = db.m_sessionDao.addSession("Test session");
+        const int sessionId = db.sessionDao().addSession("Test session");
         QVERIFY(sessionId > 0);
 
         const Spectrum original = makeSpectrum(Spectrum::Kind::Dark);
-        const int spectrumId = db.m_spectrumDao.addSpectrum(sessionId, original,
+        const int spectrumId = db.spectrumDao().addSpectrum(sessionId, original,
                                                             "dark frame", "tag1,tag2");
         QVERIFY(spectrumId > 0);
 
-        const auto entries = db.m_spectrumDao.spectra(sessionId);
+        const auto entries = db.spectrumDao().spectra(sessionId);
         QCOMPARE(entries.size(), 1);
         const SpectrumEntry& entry = entries.first();
         QCOMPARE(entry.name, QStringLiteral("dark frame"));
@@ -64,60 +64,60 @@ private slots:
         QCOMPARE(entry.spectrum.wavelengthsNm, original.wavelengthsNm);  // bit-exact
         QCOMPARE(entry.spectrum.counts, original.counts);
 
-        const SpectrumEntry byId = db.m_spectrumDao.spectrumById(spectrumId);
+        const SpectrumEntry byId = db.spectrumDao().spectrumById(spectrumId);
         QVERIFY(byId.isValid());
         QCOMPARE(byId.spectrum.counts, original.counts);
-        QVERIFY(!db.m_spectrumDao.spectrumById(99999).isValid());
+        QVERIFY(!db.spectrumDao().spectrumById(99999).isValid());
     }
 
     void removeSessionCascades()
     {
         DatabaseManager db(":memory:");
-        const int sessionId = db.m_sessionDao.addSession("Doomed");
-        db.m_spectrumDao.addSpectrum(sessionId, makeSpectrum(Spectrum::Kind::Sample), "a", "");
-        db.m_spectrumDao.addSpectrum(sessionId, makeSpectrum(Spectrum::Kind::Sample), "b", "");
-        QCOMPARE(db.m_sessionDao.sessions().first().captureCount, 2);
+        const int sessionId = db.sessionDao().addSession("Doomed");
+        db.spectrumDao().addSpectrum(sessionId, makeSpectrum(Spectrum::Kind::Sample), "a", "");
+        db.spectrumDao().addSpectrum(sessionId, makeSpectrum(Spectrum::Kind::Sample), "b", "");
+        QCOMPARE(db.sessionDao().sessions().first().captureCount, 2);
 
-        db.m_sessionDao.removeSession(sessionId);
-        QVERIFY(db.m_sessionDao.sessions().isEmpty());
-        QVERIFY(db.m_spectrumDao.spectra(sessionId).isEmpty());
+        db.sessionDao().removeSession(sessionId);
+        QVERIFY(db.sessionDao().sessions().isEmpty());
+        QVERIFY(db.spectrumDao().spectra(sessionId).isEmpty());
     }
 
     void videoLinksRoundTripAndCascade()
     {
         DatabaseManager db(":memory:");
-        const int sessionId = db.m_sessionDao.addSession("With video");
-        db.m_sessionDao.addVideo(sessionId, "/tmp/recording_001.mp4", 5250);
+        const int sessionId = db.sessionDao().addSession("With video");
+        db.sessionDao().addVideo(sessionId, "/tmp/recording_001.mp4", 5250);
 
-        const auto videos = db.m_sessionDao.videos(sessionId);
+        const auto videos = db.sessionDao().videos(sessionId);
         QCOMPARE(videos.size(), 1);
         QCOMPARE(videos.first().filepath, QStringLiteral("/tmp/recording_001.mp4"));
         QCOMPARE(videos.first().durationMs, qint64(5250));
 
-        db.m_sessionDao.removeSession(sessionId);
-        QVERIFY(db.m_sessionDao.videos(sessionId).isEmpty());
+        db.sessionDao().removeSession(sessionId);
+        QVERIFY(db.sessionDao().videos(sessionId).isEmpty());
     }
 
     void renameAndRemoveSpectrum()
     {
         DatabaseManager db(":memory:");
-        const int sessionId = db.m_sessionDao.addSession("S");
-        const int id = db.m_spectrumDao.addSpectrum(sessionId,
+        const int sessionId = db.sessionDao().addSession("S");
+        const int id = db.spectrumDao().addSpectrum(sessionId,
                                                     makeSpectrum(Spectrum::Kind::Sample),
                                                     "old", "");
-        db.m_spectrumDao.rename(id, "new");
-        QCOMPARE(db.m_spectrumDao.spectrumById(id).name, QStringLiteral("new"));
+        db.spectrumDao().rename(id, "new");
+        QCOMPARE(db.spectrumDao().spectrumById(id).name, QStringLiteral("new"));
 
-        db.m_spectrumDao.removeSpectrum(id);
-        QVERIFY(!db.m_spectrumDao.spectrumById(id).isValid());
+        db.spectrumDao().removeSpectrum(id);
+        QVERIFY(!db.spectrumDao().spectrumById(id).isValid());
     }
 
     void scopedModelFollowsSession()
     {
         DatabaseManager db(":memory:");
         SessionSpectrumModel model(db);
-        const int sessionA = db.m_sessionDao.addSession("A");
-        const int sessionB = db.m_sessionDao.addSession("B");
+        const int sessionA = db.sessionDao().addSession("A");
+        const int sessionB = db.sessionDao().addSession("B");
 
         model.setSessionId(sessionA);
         QCOMPARE(model.rowCount(), 0);

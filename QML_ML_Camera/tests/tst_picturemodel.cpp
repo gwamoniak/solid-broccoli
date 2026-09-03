@@ -73,7 +73,7 @@ void TestPictureModel::removeRowsDeletes()
 
     QCOMPARE(pictures.rowCount(), 1);
     QCOMPARE(removed.count(), 1);
-    QCOMPARE(db.m_pictureDao.picturesForAlbum(albumId)->size(), size_t(1));
+    QCOMPARE(db.pictureDao().picturesForAlbum(albumId)->size(), size_t(1));
 }
 
 void TestPictureModel::picturesCascadeDeleteWithAlbum()
@@ -85,13 +85,13 @@ void TestPictureModel::picturesCascadeDeleteWithAlbum()
     pictures.setAlbumId(albumId);
     pictures.addPictureFromUrl(QUrl::fromLocalFile("/tmp/a.jpg"));
     pictures.addPictureFromUrl(QUrl::fromLocalFile("/tmp/b.jpg"));
-    QCOMPARE(db.m_pictureDao.picturesForAlbum(albumId)->size(), size_t(2));
+    QCOMPARE(db.pictureDao().picturesForAlbum(albumId)->size(), size_t(2));
 
     // Removing the album row triggers the cascade for the loaded album.
     QVERIFY(albums.removeRows(0, 1));
 
     QCOMPARE(pictures.rowCount(), 0);
-    QCOMPARE(db.m_pictureDao.picturesForAlbum(albumId)->size(), size_t(0));
+    QCOMPARE(db.pictureDao().picturesForAlbum(albumId)->size(), size_t(0));
 }
 
 QTEST_GUILESS_MAIN(TestPictureModel)

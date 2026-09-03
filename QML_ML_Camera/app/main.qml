@@ -102,4 +102,6 @@ ApplicationWindow {
             }
         }
     }
+
+    ToastOverlay { }
 }

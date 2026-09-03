@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: normal
+            bare_machine: false
+          - name: bare-machine
+            bare_machine: true
+    name: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt and optional runtime
+        run: brew install qt onnxruntime
+
+      - name: Configure
+        shell: bash
+        run: |
+          extra_args=()
+          if [[ "${{ matrix.bare_machine }}" == "true" ]]; then
+            brew_prefix="$(brew --prefix)"
+            extra_args+=("-DCMAKE_IGNORE_PATH=${brew_prefix}/include;${brew_prefix}/lib")
+          fi
+          cmake -S QML_ML_Camera -B QML_ML_Camera/build-ci \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" \
+            -DAI_ANALYST=OFF \
+            "${extra_args[@]}"
+
+      - name: Build
+        run: cmake --build QML_ML_Camera/build-ci -j 4
+
+      - name: Test
+        run: ctest --test-dir QML_ML_Camera/build-ci --output-on-failure
+
+      - name: QML lint
+        run: >-
+          "$(brew --prefix qt)/bin/qmllint"
+          -I QML_ML_Camera/qmltypes
+          QML_ML_Camera/app/*.qml

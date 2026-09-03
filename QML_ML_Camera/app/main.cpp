@@ -3,11 +3,14 @@
 #include <QLibrary>
 #include <QPluginLoader>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
 #include <QQuickStyle>
+#include <QTemporaryDir>
+#include <QTimer>
 #include <QUrl>
 
 #include "AlbumModel.h"
+#include "AppContext.h"
+#include "AppNotifier.h"
 #include "PictureModel.h"
 #include "MovieModel.h"
 #include "SessionModel.h"
@@ -21,6 +24,7 @@
 #include "DetectionModel.h"
 #include "FrameProcessor.h"
 #include "GeigerService.h"
+#include "HelpContent.h"
 #include "SpectrometerService.h"
 #include "SpectrumOverlayProcessor.h"
 #include "SpectrumView.h"
@@ -84,6 +88,14 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("SolidBroccoli");
     QCoreApplication::setApplicationName("SolidBroccoli");
 
+    std::unique_ptr<QTemporaryDir> smokeData;
+    const bool qmlSmoke = qEnvironmentVariableIsSet("SOLIDBROCCOLI_QML_SMOKE");
+    if (qmlSmoke) {
+        smokeData = std::make_unique<QTemporaryDir>();
+        if (smokeData->isValid())
+            StorageLocations::setRootForTesting(smokeData->path());
+    }
+
     // The UI is fully custom-themed from Theme.qml tokens; the native macOS
     // style ignores contentItem/background customization, so pin the Basic
     // style on every platform.
@@ -117,6 +129,8 @@ int main(int argc, char *argv[])
     // Constructed before CameraService so the overlay (and the service whose
     // snapshot it reads) outlive the camera worker thread that calls it.
     AppSettings appSettings;
+    AppNotifier appNotifier;
+    HelpContent helpContent;
     SpectrometerService spectrometerService;
     spectrometerService.setSessionStore(&sessionModel, &sessionSpectrumModel);
 
@@ -124,7 +138,7 @@ int main(int argc, char *argv[])
     // Measurements land in the same lab-notebook session as spectral
     // captures; the provider creates the session on first save.
     geigerService.setMeasurementStore(
-        &db.m_measurementDao,
+        &db.measurementDao(),
         [&spectrometerService]() { return spectrometerService.ensureActiveSession(); });
     // Tube factor and alert threshold persist across restarts.
     geigerService.setTubeFactor(appSettings.geigerTubeFactor());
@@ -159,7 +173,7 @@ int main(int argc, char *argv[])
                      [&db, &spectrometerService](const QString& filePath, qint64 durationMs) {
                          const int sessionId = spectrometerService.activeSessionId();
                          if (sessionId >= 0)
-                             db.m_sessionDao.addVideo(sessionId, filePath, durationMs);
+                             db.sessionDao().addVideo(sessionId, filePath, durationMs);
                      });
 
     // Captured stills are filed into the camera's target album as they are
@@ -218,11 +232,42 @@ int main(int argc, char *argv[])
 #ifdef HAVE_AI_ANALYST
     // Constructed before the engine so QML never outlives it.
     ReportService reportService(db, spectrometerService, detectionModel, appSettings);
+    QObject* reportServiceObject = &reportService;
+#else
+    QObject* reportServiceObject = nullptr;
 #endif
 
-    QQmlApplicationEngine engine;
-    QQmlContext* context = engine.rootContext();
+    QObject::connect(&cameraService, &CameraService::captureError,
+                     &appNotifier, &AppNotifier::showError);
+    QObject::connect(&spectrometerService, &SpectrometerService::errorOccurred,
+                     &appNotifier, &AppNotifier::showError);
+    QObject::connect(&geigerService, &GeigerService::errorOccurred,
+                     &appNotifier, &AppNotifier::showError);
+    QObject::connect(&appSettings, &AppSettings::modelImportFailed,
+                     &appNotifier, &AppNotifier::showError);
+#ifdef HAVE_AI_ANALYST
+    QObject::connect(&reportService, &ReportService::errorOccurred,
+                     &appNotifier, &AppNotifier::showError);
+#endif
 
+    AppContext appContext(
+        albumModel, pictureModel, movieModel, loggerModel, sessionModel,
+        sessionSpectrumModel, pluginManager, captureCoordinator, detectionModel,
+        reportServiceObject, QUrl::fromLocalFile(StorageLocations::logsDir()),
+        PictureProvider::THUMBNAIL_SIZE.width(), detectionProcessor != nullptr,
+        reportServiceObject != nullptr);
+
+    QQmlApplicationEngine engine;
+    bool qmlWarnings = false;
+    QObject::connect(&engine, &QQmlEngine::warnings, &app,
+                     [&qmlWarnings](const QList<QQmlError>& warnings) {
+                         if (!warnings.isEmpty())
+                             qmlWarnings = true;
+                     });
+
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppContext", &appContext);
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppNotifier", &appNotifier);
+    qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "HelpContent", &helpContent);
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "AppSettings", &appSettings);
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "SpectrometerService",
                                  &spectrometerService);
@@ -231,33 +276,17 @@ int main(int argc, char *argv[])
     qmlRegisterType<StripChartView>("solid.broccoli", 1, 0, "StripChartView");
 
     qmlRegisterSingletonInstance("solid.broccoli", 1, 0, "CameraService", &cameraService);
-    context->setContextProperty("thumbnailSize", PictureProvider::THUMBNAIL_SIZE.width());
-    context->setContextProperty("albumModel",   &albumModel);
-    context->setContextProperty("pictureModel", &pictureModel);
-    context->setContextProperty("loggerModel",  &loggerModel);
-    context->setContextProperty("movieModel",   &movieModel);
-    context->setContextProperty("sessionModel", &sessionModel);
-    context->setContextProperty("sessionSpectrumModel", &sessionSpectrumModel);
-    context->setContextProperty("pluginModel",  &pluginManager);
-    context->setContextProperty("captureCoordinator", &captureCoordinator);
-    context->setContextProperty("detectionModel", &detectionModel);
-    context->setContextProperty("visionAvailable", detectionProcessor != nullptr);
-
-    // AI report generator: present only when ai-core (llama.cpp) was built.
-    // QML must reference reportService exclusively inside aiAvailable guards.
-#ifdef HAVE_AI_ANALYST
-    context->setContextProperty("reportService", &reportService);
-    context->setContextProperty("aiAvailable", true);
-#else
-    context->setContextProperty("reportService", QVariant());
-    context->setContextProperty("aiAvailable", false);
-#endif
-    context->setContextProperty("logsPath", QUrl::fromLocalFile(StorageLocations::logsDir()));
     engine.addImageProvider("pictures", new PictureProvider(&pictureModel));
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;
+
+    if (qmlSmoke) {
+        QTimer::singleShot(250, &app, [&app, &qmlWarnings]() {
+            app.exit(qmlWarnings ? 2 : 0);
+        });
+    }
 
     return app.exec();
 }

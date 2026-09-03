@@ -5,7 +5,7 @@ import solid.broccoli 1.0
 import "."
 
 // Captures of one session: overlay onto the live plot, export, rename,
-// delete. All operations go through sessionSpectrumModel / the service.
+// delete. All operations go through AppContext.sessionSpectrumModel / the service.
 NavPage {
     id: detailPage
     property int sessionId: -1
@@ -17,14 +17,14 @@ NavPage {
     pageTitle: sessionName
     showLargeTitle: false
 
-    Component.onCompleted: sessionSpectrumModel.setSessionId(sessionId)
+    Component.onCompleted: AppContext.sessionSpectrumModel.setSessionId(sessionId)
 
     ListView {
         id: captureList
         anchors.fill: parent
         anchors.margins: Theme.screenMargin
         spacing: 8
-        model: sessionSpectrumModel
+        model: AppContext.sessionSpectrumModel
         boundsBehavior: Flickable.StopAtBounds
         clip: true
 
@@ -32,8 +32,8 @@ NavPage {
         footer: Column {
             width: captureList.width
             spacing: 6
-            property var videos: sessionSpectrumModel.sessionVideos(detailPage.sessionId)
-            property var measurements: sessionSpectrumModel.sessionMeasurements(detailPage.sessionId)
+            property var videos: AppContext.sessionSpectrumModel.sessionVideos(detailPage.sessionId)
+            property var measurements: AppContext.sessionSpectrumModel.sessionMeasurements(detailPage.sessionId)
 
             Label {
                 visible: parent.measurements.length > 0
@@ -62,8 +62,8 @@ NavPage {
 
                         // Dosimeter badge
                         Rectangle {
-                            width: 56
-                            height: 22
+                            Layout.preferredWidth: 56
+                            Layout.preferredHeight: 22
                             radius: 5
                             color: Theme.fill
                             Label {
@@ -136,7 +136,7 @@ NavPage {
             // the AI build; only generation needs it).
             property var reports: {
                 detailPage.reportsRefresh
-                return sessionSpectrumModel.sessionReports(detailPage.sessionId)
+                return AppContext.sessionSpectrumModel.sessionReports(detailPage.sessionId)
             }
 
             Label {
@@ -207,18 +207,18 @@ NavPage {
             // Generation entry point — only with the AI build present.
             Loader {
                 width: captureList.width
-                active: aiAvailable
+                active: AppContext.aiAvailable
                 sourceComponent: Button {
                     id: generateButton
-                    enabled: !reportService.busy
-                    text: reportService.busy ? qsTr("Generating…")
+                    enabled: !AppContext.reportService.busy
+                    text: AppContext.reportService.busy ? qsTr("Generating…")
                                              : qsTr("Generate AI report")
                     onClicked: {
                         reportText.text = ""
                         reportViewer.reportId = -1
                         reportViewer.streaming = true
                         reportViewer.open()
-                        reportService.generateReport(detailPage.sessionId)
+                        AppContext.reportService.generateReport(detailPage.sessionId)
                     }
                     background: Rectangle {
                         radius: Theme.radiusControl
@@ -262,8 +262,8 @@ NavPage {
 
                 // Kind badge
                 Rectangle {
-                    width: 46
-                    height: 22
+                    Layout.preferredWidth: 46
+                    Layout.preferredHeight: 22
                     radius: 5
                     color: Theme.fill
                     Label {
@@ -297,8 +297,8 @@ NavPage {
                 // Overlay toggle
                 Button {
                     id: overlayBtn
-                    width: 52
-                    height: 30
+                    Layout.preferredWidth: 52
+                    Layout.preferredHeight: 30
                     text: qsTr("Ovl")
                     onClicked: SpectrometerService.toggleOverlay(captureRow.id)
                     background: Rectangle {
@@ -364,7 +364,7 @@ NavPage {
     InputDialog {
         id: renameDialog
         label: qsTr("Rename capture")
-        onAccepted: sessionSpectrumModel.rename(detailPage.actionRow,
+        onAccepted: AppContext.sessionSpectrumModel.rename(detailPage.actionRow,
                                                 renameDialog.editText.text)
     }
 
@@ -413,7 +413,7 @@ NavPage {
                     id: confirmDelete
                     text: qsTr("Delete")
                     onClicked: {
-                        sessionSpectrumModel.removeRows(detailPage.actionRow, 1)
+                        AppContext.sessionSpectrumModel.removeRows(detailPage.actionRow, 1)
                         deleteDialog.close()
                     }
                     background: Rectangle {
@@ -423,7 +423,7 @@ NavPage {
                     contentItem: Text {
                         text: confirmDelete.text
                         font.pointSize: Theme.subhead
-                        color: "#FFFFFF"
+                        color: Theme.onCamera
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         leftPadding: 12; rightPadding: 12
@@ -489,7 +489,7 @@ NavPage {
                     id: exportReportButton
                     visible: reportViewer.reportId > 0
                     text: qsTr("Export .md")
-                    onClicked: sessionSpectrumModel.exportReportMarkdown(reportViewer.reportId)
+                    onClicked: AppContext.sessionSpectrumModel.exportReportMarkdown(reportViewer.reportId)
                     background: Rectangle {
                         radius: Theme.radiusControl
                         color: exportReportButton.down ? Theme.accentPressed : Theme.fill
@@ -509,8 +509,8 @@ NavPage {
                     id: closeReportButton
                     text: reportViewer.streaming ? qsTr("Cancel") : qsTr("Close")
                     onClicked: {
-                        if (reportViewer.streaming && aiAvailable)
-                            reportService.cancel()
+                        if (reportViewer.streaming && AppContext.aiAvailable)
+                            AppContext.reportService.cancel()
                         reportViewer.close()
                     }
                     background: Rectangle {
@@ -532,15 +532,15 @@ NavPage {
     }
 
     // Streaming glue — only instantiated when the AI build is present, so
-    // reportService is never referenced otherwise.
+    // AppContext.reportService is never referenced otherwise.
     Loader {
-        active: aiAvailable
+        active: AppContext.aiAvailable
         sourceComponent: Item {
             Connections {
-                target: reportService
+                target: AppContext.reportService
                 function onStreamTextChanged() {
                     if (reportViewer.streaming)
-                        reportText.text = reportService.streamText
+                        reportText.text = AppContext.reportService.streamText
                 }
                 function onReportSaved(sessionId) {
                     if (sessionId === detailPage.sessionId)
@@ -548,10 +548,8 @@ NavPage {
                     reportViewer.streaming = false
                 }
                 function onErrorOccurred(message) {
-                    if (reportViewer.streaming) {
-                        reportText.text = qsTr("**Error:** ") + message
+                    if (reportViewer.streaming)
                         reportViewer.streaming = false
-                    }
                 }
             }
         }

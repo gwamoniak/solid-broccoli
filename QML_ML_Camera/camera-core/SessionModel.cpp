@@ -6,12 +6,12 @@ SessionModel::SessionModel(DatabaseManager& db, QObject* parent)
     : QAbstractListModel(parent)
     , m_sqlDB(db)
 {
-    m_sessions = m_sqlDB.m_sessionDao.sessions();
+    m_sessions = m_sqlDB.sessionDao().sessions();
 }
 
 int SessionModel::addSessionFromName(const QString& name)
 {
-    const int id = m_sqlDB.m_sessionDao.addSession(name);
+    const int id = m_sqlDB.sessionDao().addSession(name);
     refresh();
     return id;
 }
@@ -20,7 +20,7 @@ void SessionModel::rename(int row, const QString& name)
 {
     if (row < 0 || row >= m_sessions.size())
         return;
-    m_sqlDB.m_sessionDao.updateName(m_sessions[row].id, name);
+    m_sqlDB.sessionDao().updateName(m_sessions[row].id, name);
     m_sessions[row].name = name;
     emit dataChanged(index(row), index(row));
 }
@@ -31,7 +31,7 @@ bool SessionModel::removeRows(int row, int count, const QModelIndex& parent)
         return false;
     beginRemoveRows(parent, row, row + count - 1);
     for (int i = 0; i < count; ++i) {
-        m_sqlDB.m_sessionDao.removeSession(m_sessions[row].id);
+        m_sqlDB.sessionDao().removeSession(m_sessions[row].id);
         m_sessions.removeAt(row);
     }
     endRemoveRows();
@@ -41,7 +41,7 @@ bool SessionModel::removeRows(int row, int count, const QModelIndex& parent)
 void SessionModel::refresh()
 {
     beginResetModel();
-    m_sessions = m_sqlDB.m_sessionDao.sessions();
+    m_sessions = m_sqlDB.sessionDao().sessions();
     endResetModel();
 }
 

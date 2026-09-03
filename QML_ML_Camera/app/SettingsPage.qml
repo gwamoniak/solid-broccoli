@@ -495,7 +495,7 @@ NavPage {
                     Item {
                         width: parent.width
                         height: 50
-                        visible: !visionAvailable
+                        visible: !AppContext.visionAvailable
 
                         RowLayout {
                             anchors.fill: parent
@@ -514,7 +514,7 @@ NavPage {
 
                     SettingSwitcher {
                         width: parent.width
-                        visible: visionAvailable
+                        visible: AppContext.visionAvailable
                         text: qsTr("Object detection")
                         value: AppSettings.objectDetection
                         onSwitched: function(checked) { AppSettings.objectDetection = checked }
@@ -524,7 +524,7 @@ NavPage {
                         width: parent.width - 28
                         height: Theme.hairline
                         color: Theme.separator
-                        visible: visionAvailable
+                        visible: AppContext.visionAvailable
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
@@ -532,7 +532,7 @@ NavPage {
                     Item {
                         width: parent.width
                         height: 50
-                        visible: visionAvailable
+                        visible: AppContext.visionAvailable
 
                         MouseArea {
                             anchors.fill: parent
@@ -585,7 +585,7 @@ NavPage {
                         width: parent.width - 28
                         height: Theme.hairline
                         color: Theme.separator
-                        visible: visionAvailable
+                        visible: AppContext.visionAvailable
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
@@ -593,7 +593,7 @@ NavPage {
                     Item {
                         width: parent.width
                         height: 58
-                        visible: visionAvailable
+                        visible: AppContext.visionAvailable
 
                         RowLayout {
                             anchors.fill: parent
@@ -725,7 +725,7 @@ NavPage {
                 font.pointSize: Theme.caption
                 color: Theme.secondaryLabel
                 Layout.leftMargin: 12
-                visible: aiAvailable
+                visible: AppContext.aiAvailable
             }
 
             Rectangle {
@@ -733,7 +733,7 @@ NavPage {
                 radius: Theme.radiusControl
                 color: Theme.surface
                 implicitHeight: aiCol.implicitHeight
-                visible: aiAvailable
+                visible: AppContext.aiAvailable
 
                 Column {
                     id: aiCol
@@ -824,33 +824,81 @@ NavPage {
 
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 50
+                implicitHeight: aboutCol.implicitHeight
                 radius: Theme.radiusControl
                 color: Theme.surface
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        if (owningStack)
-                            owningStack.push("qrc:/LoggerPage.qml", { owningStack: owningStack })
-                    }
-                }
+                Column {
+                    id: aboutCol
+                    width: parent.width
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
+                    Item {
+                        width: parent.width
+                        height: 50
 
-                    Label {
-                        text: qsTr("Open Logger")
-                        font.pointSize: Theme.body
-                        color: Theme.accent
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (owningStack)
+                                    owningStack.push("qrc:/HelpPage.qml", { owningStack: owningStack })
+                            }
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("User Manual")
+                                font.pointSize: Theme.body
+                                color: Theme.accent
+                            }
+                            Item { Layout.fillWidth: true }
+                            Label {
+                                text: ">"
+                                font.pointSize: Theme.body
+                                color: Theme.secondaryLabel
+                            }
+                        }
                     }
-                    Item { Layout.fillWidth: true }
-                    Label {
-                        text: ">"
-                        font.pointSize: Theme.body
-                        color: Theme.secondaryLabel
+
+                    Rectangle {
+                        width: parent.width - 28
+                        height: Theme.hairline
+                        color: Theme.separator
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: 50
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (owningStack)
+                                    owningStack.push("qrc:/LoggerPage.qml", { owningStack: owningStack })
+                            }
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+
+                            Label {
+                                text: qsTr("Open Logger")
+                                font.pointSize: Theme.body
+                                color: Theme.accent
+                            }
+                            Item { Layout.fillWidth: true }
+                            Label {
+                                text: ">"
+                                font.pointSize: Theme.body
+                                color: Theme.secondaryLabel
+                            }
+                        }
                     }
                 }
             }

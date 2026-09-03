@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Controls
 import QtQuick.Dialogs
 import "."
@@ -31,7 +32,7 @@ NavPage {
                 icon.width: 20; icon.height: 20
                 background: null
                 onClicked: {
-                    albumModel.removeRows(albumRowIndex, 1)
+                    AppContext.albumModel.removeRows(albumRowIndex, 1)
                     if (owningStack) owningStack.pop()
                 }
             }
@@ -45,7 +46,7 @@ NavPage {
         hint: albumName
         onAccepted: {
             editText.focus = false
-            albumModel.rename(albumRowIndex, editText.text)
+            AppContext.albumModel.rename(albumRowIndex, editText.text)
             albumName = editText.text
         }
     }
@@ -54,7 +55,7 @@ NavPage {
         id: fileDialog
         title: qsTr("Open file")
         onAccepted: {
-            pictureModel.addPictureFromUrl(fileDialog.selectedFile)
+            AppContext.pictureModel.addPictureFromUrl(fileDialog.selectedFile)
         }
     }
 
@@ -64,7 +65,7 @@ NavPage {
         anchors.margins: 2
         cellWidth: Math.floor(width / Math.max(3, Math.floor(width / 160)))
         cellHeight: cellWidth
-        model: pictureModel
+        model: AppContext.pictureModel
 
         delegate: Item {
             width: photoGrid.cellWidth
@@ -87,7 +88,7 @@ NavPage {
                     Label {
                         anchors.centerIn: parent
                         text: name
-                        color: "#FFFFFF"
+                        color: Theme.onCamera
                         font.pointSize: Theme.caption
                         elide: Text.ElideRight
                         width: parent.width - 8

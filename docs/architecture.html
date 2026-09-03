@@ -112,7 +112,7 @@
 
 <section id="targets">
   <h2><span class="idx">01</span>Build targets</h2>
-  <p>Nine CMake targets. Solid arrows are link-time dependencies; dashed are optional or
+  <p>Ten CMake targets. Solid arrows are link-time dependencies; dashed are optional or
      runtime-only. <code>ai-core</code> and <code>objectdetect-processor</code> may be absent —
      the bare machine still builds and tests green.</p>
   <pre class="mermaid">
@@ -122,10 +122,11 @@ flowchart BT
     spectro["spectro-core&lt;br/&gt;shared - analysis math, device stack, codecs, BLE"]
     sim["spectro-sim&lt;br/&gt;shared - physics synthesis, noise model, fault injection"]
     camera["camera-core&lt;br/&gt;shared - SQLite, DAOs, list models, storage paths"]
+    appcore["app-core&lt;br/&gt;static - services, facades, render adapters"]
     ai["ai-core&lt;br/&gt;static - AiAnalyst over llama.cpp b6100"]
     gray["grayscale-processor&lt;br/&gt;plugin module"]
     det["objectdetect-processor&lt;br/&gt;plugin module - YOLO via ONNX Runtime"]
-    app["QML_ML_Camera_App&lt;br/&gt;services, QML shell, pipeline composition"]
+    app["QML_ML_Camera_App&lt;br/&gt;QML shell and composition root"]
 
     spectro --> logger
     sim --> spectro
@@ -135,11 +136,12 @@ flowchart BT
     det --> papi
     det --> logger
     ai --> logger
-    app --> camera
-    app --> spectro
-    app --> sim
-    app --> papi
-    app --> logger
+    appcore --> camera
+    appcore --> spectro
+    appcore --> sim
+    appcore --> papi
+    appcore --> logger
+    app --> appcore
     app -. "only when AI_ANALYST=ON" .-> ai
     app -. "QPluginLoader, runtime" .-> gray
     app -. "QPluginLoader, runtime" .-> det

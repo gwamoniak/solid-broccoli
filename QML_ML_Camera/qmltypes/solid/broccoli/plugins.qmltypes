@@ -1,0 +1,304 @@
+import QtQuick.tooling 1.2
+
+// Tooling-only description of the instances registered by main.cpp. Keeping
+// this beside the source module gives qmllint and IDE completion the same
+// public surface that QML receives at runtime without creating a second plugin
+// or a second set of singleton objects.
+Module {
+    Component {
+        name: "AppContext"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/AppContext 1.0"]
+        isSingleton: true
+        Property { name: "albumModel"; type: "AlbumModel"; isPointer: true; isReadonly: true }
+        Property { name: "pictureModel"; type: "PictureModel"; isPointer: true; isReadonly: true }
+        Property { name: "movieModel"; type: "MovieModel"; isPointer: true; isReadonly: true }
+        Property { name: "loggerModel"; type: "LoggerModel"; isPointer: true; isReadonly: true }
+        Property { name: "sessionModel"; type: "SessionModel"; isPointer: true; isReadonly: true }
+        Property { name: "sessionSpectrumModel"; type: "SessionSpectrumModel"; isPointer: true; isReadonly: true }
+        Property { name: "pluginModel"; type: "PluginManager"; isPointer: true; isReadonly: true }
+        Property { name: "captureCoordinator"; type: "CaptureCoordinator"; isPointer: true; isReadonly: true }
+        Property { name: "detectionModel"; type: "DetectionModel"; isPointer: true; isReadonly: true }
+        Property { name: "reportService"; type: "QVariant"; isReadonly: true }
+        Property { name: "logsUrl"; type: "QUrl"; isReadonly: true }
+        Property { name: "thumbnailSize"; type: "int"; isReadonly: true }
+        Property { name: "visionAvailable"; type: "bool"; isReadonly: true }
+        Property { name: "aiAvailable"; type: "bool"; isReadonly: true }
+    }
+
+    Component {
+        name: "AppNotifier"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/AppNotifier 1.0"]
+        isSingleton: true
+        Enum { name: "Level"; values: ["Info", "Warning", "Error"] }
+        Property { name: "message"; type: "QString"; isReadonly: true }
+        Property { name: "level"; type: "Level"; isReadonly: true }
+        Property { name: "revision"; type: "quint64"; isReadonly: true }
+        Signal { name: "notificationChanged" }
+        Method { name: "showInfo"; Parameter { name: "message"; type: "QString" } }
+        Method { name: "showWarning"; Parameter { name: "message"; type: "QString" } }
+        Method { name: "showError"; Parameter { name: "message"; type: "QString" } }
+    }
+
+    Component {
+        name: "HelpContent"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/HelpContent 1.0"]
+        isSingleton: true
+        Property { name: "markdown"; type: "QString"; isReadonly: true }
+    }
+
+    Component {
+        name: "AppSettings"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/AppSettings 1.0"]
+        isSingleton: true
+        Property { name: "shutterFlash"; type: "bool" }
+        Property { name: "mirrorPreview"; type: "bool" }
+        Property { name: "spectrumOverlay"; type: "bool" }
+        Property { name: "geigerTubeFactor"; type: "double" }
+        Property { name: "geigerAlertThreshold"; type: "double" }
+        Property { name: "objectDetection"; type: "bool" }
+        Property { name: "detectionModelPath"; type: "QString"; isReadonly: true }
+        Property { name: "detectionModelName"; type: "QString"; isReadonly: true }
+        Property { name: "detectionStride"; type: "int" }
+        Property { name: "aiModelPath"; type: "QString"; isReadonly: true }
+        Property { name: "aiModelName"; type: "QString"; isReadonly: true }
+        Method { name: "importDetectionModel"; type: "bool"; Parameter { name: "source"; type: "QUrl" } }
+        Method { name: "revealModelsDir" }
+        Method { name: "setAiModelFromUrl"; Parameter { name: "source"; type: "QUrl" } }
+    }
+
+    Component {
+        name: "CameraService"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/CameraService 1.0"]
+        isSingleton: true
+        Property { name: "availableCameras"; type: "QStringList"; isReadonly: true }
+        Property { name: "currentCameraIndex"; type: "int" }
+        Property { name: "availableFormats"; type: "QStringList"; isReadonly: true }
+        Property { name: "currentFormatIndex"; type: "int" }
+        Property { name: "active"; type: "bool"; isReadonly: true }
+        Property { name: "recording"; type: "bool"; isReadonly: true }
+        Property { name: "recordingDuration"; type: "QString"; isReadonly: true }
+        Signal { name: "imageSaved"; Parameter { name: "filePath"; type: "QString" } }
+        Signal { name: "captureError"; Parameter { name: "message"; type: "QString" } }
+        Method { name: "attachVideoOutput"; Parameter { name: "videoOutput"; type: "QObject"; isPointer: true } }
+        Method { name: "setActive"; Parameter { name: "active"; type: "bool" } }
+        Method { name: "captureImage" }
+        Method { name: "startRecording" }
+        Method { name: "stopRecording" }
+    }
+
+    Component {
+        name: "SpectrometerService"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/SpectrometerService 1.0"]
+        isSingleton: true
+        Property { name: "availableDevices"; type: "QStringList"; isReadonly: true }
+        Property { name: "currentDeviceIndex"; type: "int" }
+        Property { name: "connected"; type: "bool"; isReadonly: true }
+        Property { name: "acquiring"; type: "bool"; isReadonly: true }
+        Property { name: "integrationTimeMs"; type: "int" }
+        Property { name: "averaging"; type: "int" }
+        Property { name: "peakWavelengthNm"; type: "double"; isReadonly: true }
+        Property { name: "peakValue"; type: "double"; isReadonly: true }
+        Property { name: "framesPerSecond"; type: "double"; isReadonly: true }
+        Property { name: "mode"; type: "int" }
+        Property { name: "hold"; type: "bool" }
+        Property { name: "hasDark"; type: "bool"; isReadonly: true }
+        Property { name: "hasReference"; type: "bool"; isReadonly: true }
+        Property { name: "smoothingWindow"; type: "int" }
+        Property { name: "integrationFromNm"; type: "double"; isReadonly: true }
+        Property { name: "integrationToNm"; type: "double"; isReadonly: true }
+        Property { name: "hasIntegrationRegion"; type: "bool"; isReadonly: true }
+        Property { name: "integralValue"; type: "double"; isReadonly: true }
+        Property { name: "peakModel"; type: "QVariant"; isReadonly: true }
+        Property { name: "overlayIds"; type: "QVariantList"; isReadonly: true }
+        Method { name: "refreshDevices" }
+        Method { name: "selectNextDevice" }
+        Method { name: "connectDevice"; type: "bool" }
+        Method { name: "disconnectDevice" }
+        Method { name: "startAcquisition" }
+        Method { name: "stopAcquisition" }
+        Method { name: "captureDark" }
+        Method { name: "captureReference" }
+        Method { name: "setIntegrationRegion"; Parameter { name: "fromNm"; type: "double" }
+        Parameter { name: "toNm"; type: "double" } }
+        Method { name: "clearIntegrationRegion" }
+        Method { name: "saveCapture"; Parameter { name: "name"; type: "QString" }
+        Parameter { name: "tags"; type: "QString" } }
+        Method { name: "toggleOverlay"; Parameter { name: "spectrumId"; type: "int" } }
+        Method { name: "clearOverlays" }
+        Method { name: "exportCapture"; type: "bool"; Parameter { name: "spectrumId"; type: "int" } }
+    }
+
+    Component {
+        name: "GeigerService"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["solid.broccoli/GeigerService 1.0"]
+        isSingleton: true
+        Property { name: "availableDevices"; type: "QStringList"; isReadonly: true }
+        Property { name: "currentDeviceIndex"; type: "int" }
+        Property { name: "connected"; type: "bool"; isReadonly: true }
+        Property { name: "acquiring"; type: "bool"; isReadonly: true }
+        Property { name: "countsPerSecond"; type: "double"; isReadonly: true }
+        Property { name: "countsPerMinute"; type: "double"; isReadonly: true }
+        Property { name: "doseMicroSvPerHour"; type: "double"; isReadonly: true }
+        Property { name: "aboveThreshold"; type: "bool"; isReadonly: true }
+        Property { name: "tubeFactor"; type: "double" }
+        Property { name: "alertThreshold"; type: "double" }
+        Method { name: "selectNextDevice" }
+        Method { name: "connectDevice"; type: "bool" }
+        Method { name: "disconnectDevice" }
+        Method { name: "startAcquisition" }
+        Method { name: "stopAcquisition" }
+        Method { name: "saveMeasurement"; Parameter { name: "name"; type: "QString" }
+        Parameter { name: "tags"; type: "QString" } }
+        Method { name: "exportWindowCsv"; type: "bool" }
+    }
+
+    Component {
+        name: "SpectrumView"
+        accessSemantics: "reference"
+        prototype: "QQuickItem"
+        exports: ["solid.broccoli/SpectrumView 1.0"]
+        Property { name: "source"; type: "SpectrometerService"; isPointer: true }
+        Property { name: "minWavelength"; type: "double"; isReadonly: true }
+        Property { name: "maxWavelength"; type: "double"; isReadonly: true }
+        Property { name: "yMax"; type: "double"; isReadonly: true }
+        Property { name: "autoScaleY"; type: "bool" }
+        Property { name: "xAxisTitle"; type: "QString" }
+        Property { name: "xTickStep"; type: "double" }
+        Property { name: "showReference"; type: "bool" }
+        Property { name: "showDark"; type: "bool" }
+        Property { name: "tickWavelengths"; type: "QVariantList"; isReadonly: true }
+        Property { name: "gridColor"; type: "QColor" }
+        Property { name: "axisColor"; type: "QColor" }
+        Property { name: "traceColor"; type: "QColor" }
+        Property { name: "referenceColor"; type: "QColor" }
+        Property { name: "darkTraceColor"; type: "QColor" }
+        Property { name: "regionColor"; type: "QColor" }
+        Property { name: "overlayColor1"; type: "QColor" }
+        Property { name: "overlayColor2"; type: "QColor" }
+        Property { name: "overlayColor3"; type: "QColor" }
+        Property { name: "integrationFromNm"; type: "double" }
+        Property { name: "integrationToNm"; type: "double" }
+        Property { name: "cursorVisible"; type: "bool"; isReadonly: true }
+        Property { name: "cursorWavelengthNm"; type: "double"; isReadonly: true }
+        Property { name: "cursorValue"; type: "double"; isReadonly: true }
+        Property { name: "cursorCandidate"; type: "QString"; isReadonly: true }
+        Method { name: "wavelengthToX"; type: "double"; Parameter { name: "nm"; type: "double" } }
+        Method { name: "valueToY"; type: "double"; Parameter { name: "value"; type: "double" } }
+        Method { name: "centerOn"; Parameter { name: "nm"; type: "double" } }
+        Method { name: "resetView" }
+        Method { name: "inspectAtX"; Parameter { name: "x"; type: "double" } }
+        Method { name: "clearCursor" }
+    }
+
+    Component {
+        name: "StripChartView"
+        accessSemantics: "reference"
+        prototype: "QQuickItem"
+        exports: ["solid.broccoli/StripChartView 1.0"]
+        Property { name: "source"; type: "GeigerService"; isPointer: true }
+        Property { name: "windowSeconds"; type: "int" }
+        Property { name: "compact"; type: "bool" }
+        Property { name: "yMax"; type: "double"; isReadonly: true }
+        Property { name: "gridColor"; type: "QColor" }
+        Property { name: "traceColor"; type: "QColor" }
+        Property { name: "thresholdColor"; type: "QColor" }
+    }
+
+    Component {
+        name: "AlbumModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "addAlbumFromName"; Parameter { name: "name"; type: "QString" } }
+        Method { name: "createAlbumReturningId"; type: "int"; Parameter { name: "name"; type: "QString" } }
+        Method { name: "rename"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "name"; type: "QString" } }
+        Method { name: "removeRows"; type: "bool"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "count"; type: "int" } }
+    }
+    Component {
+        name: "PictureModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "addPictureFromUrl"; Parameter { name: "url"; type: "QUrl" } }
+        Method { name: "rename"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "name"; type: "QString" } }
+        Method { name: "removeRows"; type: "bool"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "count"; type: "int" } }
+        Method { name: "setAlbumId"; Parameter { name: "albumId"; type: "int" } }
+    }
+    Component {
+        name: "MovieModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "rename"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "name"; type: "QString" } }
+        Method { name: "removeRows"; type: "bool"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "count"; type: "int" } }
+    }
+    Component {
+        name: "LoggerModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "readLatestLog" }
+        Method { name: "readCSV"; Parameter { name: "url"; type: "QUrl" } }
+    }
+    Component {
+        name: "SessionModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "refresh" }
+        Method { name: "rename"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "name"; type: "QString" } }
+        Method { name: "removeRows"; type: "bool"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "count"; type: "int" } }
+    }
+    Component {
+        name: "SessionSpectrumModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "setSessionId"; Parameter { name: "sessionId"; type: "int" } }
+        Method { name: "rename"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "name"; type: "QString" } }
+        Method { name: "sessionVideos"; type: "QVariantList"; Parameter { name: "sessionId"; type: "int" } }
+        Method { name: "sessionMeasurements"; type: "QVariantList"; Parameter { name: "sessionId"; type: "int" } }
+        Method { name: "sessionReports"; type: "QVariantList"; Parameter { name: "sessionId"; type: "int" } }
+        Method { name: "exportReportMarkdown"; type: "bool"; Parameter { name: "reportId"; type: "int" } }
+        Method { name: "removeRows"; type: "bool"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "count"; type: "int" } }
+    }
+    Component {
+        name: "PluginManager"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Method { name: "setEnabled"; Parameter { name: "row"; type: "int" }
+        Parameter { name: "enabled"; type: "bool" } }
+    }
+    Component {
+        name: "CaptureCoordinator"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        Property { name: "targetAlbumId"; type: "int" }
+        Property { name: "targetAlbumName"; type: "QString"; isReadonly: true }
+        Method { name: "createAlbumAndSelect"; type: "int"; Parameter { name: "name"; type: "QString" } }
+    }
+    Component {
+        name: "DetectionModel"
+        accessSemantics: "reference"
+        prototype: "QAbstractListModel"
+        Property { name: "count"; type: "int"; isReadonly: true }
+    }
+}

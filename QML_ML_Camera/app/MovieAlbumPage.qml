@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Layouts
 import QtQuick.Controls
 import "."
@@ -13,7 +14,7 @@ NavPage {
         anchors.fill: parent
         anchors.topMargin: Theme.screenMargin
         clip: true
-        model: movieModel
+        model: AppContext.movieModel
         spacing: 1
 
         delegate: Rectangle {
@@ -28,7 +29,8 @@ NavPage {
                 spacing: 12
 
                 Rectangle {
-                    width: 44; height: 44
+                    Layout.preferredWidth: 44
+                    Layout.preferredHeight: 44
                     radius: 6
                     color: Theme.fill
 

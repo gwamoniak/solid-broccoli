@@ -69,8 +69,8 @@ NavPage {
             }
 
             Rectangle {
-                width: 8
-                height: 8
+                Layout.preferredWidth: 8
+                Layout.preferredHeight: 8
                 radius: 4
                 color: Theme.live
                 visible: GeigerService.acquiring
@@ -78,15 +78,6 @@ NavPage {
 
             Item { Layout.fillWidth: true }
 
-            Label {
-                id: geigerError
-                text: ""
-                visible: text.length > 0
-                font.pointSize: Theme.footnote
-                color: Theme.destructive
-                elide: Text.ElideRight
-                Layout.maximumWidth: parent.width * 0.35
-            }
         }
 
         // ── Strip chart ──
@@ -206,17 +197,4 @@ NavPage {
         onAccepted: GeigerService.saveMeasurement(editText.text, "")
     }
 
-    Timer {
-        id: geigerErrorTimer
-        interval: 4000
-        onTriggered: geigerError.text = ""
-    }
-
-    Connections {
-        target: GeigerService
-        function onErrorOccurred(message) {
-            geigerError.text = message
-            geigerErrorTimer.restart()
-        }
-    }
 }

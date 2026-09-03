@@ -53,7 +53,8 @@ Rectangle {
                 Item { Layout.fillWidth: true }
                 Button {
                     id: smoothMinus
-                    width: 30; height: 30
+                    Layout.preferredWidth: 30
+                    Layout.preferredHeight: 30
                     text: "−"
                     enabled: SpectrometerService.smoothingWindow > 0
                     onClicked: SpectrometerService.smoothingWindow =
@@ -78,7 +79,8 @@ Rectangle {
                 }
                 Button {
                     id: smoothPlus
-                    width: 30; height: 30
+                    Layout.preferredWidth: 30
+                    Layout.preferredHeight: 30
                     text: "+"
                     enabled: SpectrometerService.smoothingWindow < 25
                     onClicked: SpectrometerService.smoothingWindow =
@@ -94,7 +96,7 @@ Rectangle {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: Theme.hairline; color: Theme.separator }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: Theme.hairline; color: Theme.separator }
 
             // ── PEAKS ──
             SectionLabel { text: qsTr("PEAKS") }
@@ -156,7 +158,7 @@ Rectangle {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: Theme.hairline; color: Theme.separator }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: Theme.hairline; color: Theme.separator }
 
             // ── INTEGRATION ──
             SectionLabel { text: qsTr("INTEGRATION") }
@@ -178,7 +180,7 @@ Rectangle {
                 Button {
                     id: setRegionBtn
                     text: qsTr("Set from view")
-                    height: 30
+                    Layout.preferredHeight: 30
                     onClicked: if (panel.plotView)
                                    SpectrometerService.setIntegrationRegion(
                                        panel.plotView.minWavelength,
@@ -206,7 +208,7 @@ Rectangle {
                 color: Theme.accent
             }
 
-            Rectangle { Layout.fillWidth: true; height: Theme.hairline; color: Theme.separator }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: Theme.hairline; color: Theme.separator }
 
             // ── CAPTURE ──
             SectionLabel { text: qsTr("CAPTURE") }
@@ -214,7 +216,7 @@ Rectangle {
             Button {
                 id: saveBtn
                 Layout.fillWidth: true
-                height: 40
+                Layout.preferredHeight: 40
                 text: qsTr("Save capture")
                 enabled: SpectrometerService.acquiring || SpectrometerService.hold
                 onClicked: panel.saveRequested()

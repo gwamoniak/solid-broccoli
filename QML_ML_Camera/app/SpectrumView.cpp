@@ -6,8 +6,10 @@
 #include <QSGFlatColorMaterial>
 #include <QSGGeometryNode>
 #include <QSGNode>
+#include <QHoverEvent>
 #include <QWheelEvent>
 
+#include "PeakMatcher.h"
 #include "SpectrometerService.h"
 
 namespace {
@@ -22,6 +24,7 @@ SpectrumView::SpectrumView(QQuickItem* parent)
     setFlag(ItemHasContents, true);
     setClip(true);
     setAcceptedMouseButtons(Qt::LeftButton);
+    setAcceptHoverEvents(true);
     setAcceptTouchEvents(true);
 }
 
@@ -293,7 +296,66 @@ void SpectrumView::wheelEvent(QWheelEvent* event)
 void SpectrumView::mousePressEvent(QMouseEvent* event)
 {
     m_lastMouseX = event->position().x();
+    inspectAtX(m_lastMouseX);
     event->accept();
+}
+
+void SpectrumView::hoverMoveEvent(QHoverEvent* event)
+{
+    inspectAtX(event->position().x());
+    event->accept();
+}
+
+void SpectrumView::hoverLeaveEvent(QHoverEvent* event)
+{
+    clearCursor();
+    event->accept();
+}
+
+void SpectrumView::inspectAtX(double x)
+{
+    if (!m_live.isValid()) {
+        clearCursor();
+        return;
+    }
+
+    const double targetNm = nmAtX(x);
+    const auto it = std::lower_bound(m_live.wavelengthsNm.cbegin(),
+                                     m_live.wavelengthsNm.cend(), targetNm);
+    int index = int(it - m_live.wavelengthsNm.cbegin());
+    if (index >= m_live.wavelengthsNm.size())
+        index = m_live.wavelengthsNm.size() - 1;
+    if (index > 0
+        && std::abs(m_live.wavelengthsNm[index - 1] - targetNm)
+           < std::abs(m_live.wavelengthsNm[index] - targetNm)) {
+        --index;
+    }
+
+    m_cursorVisible = true;
+    m_cursorWavelengthNm = m_live.wavelengthsNm[index];
+    m_cursorValue = m_live.counts[index];
+    m_cursorCandidate.clear();
+
+    const bool localPeak = index > 0 && index + 1 < m_live.counts.size()
+                           && m_live.counts[index] >= m_live.counts[index - 1]
+                           && m_live.counts[index] >= m_live.counts[index + 1];
+    if (localPeak) {
+        const SpectroAnalysis::Peak peak{index, m_cursorWavelengthNm,
+                                         m_cursorValue, 1.0};
+        const auto candidates = PeakMatcher::match(
+            {peak}, PeakMatcher::toleranceForGrid(m_live.wavelengthsNm));
+        if (!candidates.isEmpty())
+            m_cursorCandidate = candidates.first().species;
+    }
+    emit cursorChanged();
+}
+
+void SpectrumView::clearCursor()
+{
+    if (!m_cursorVisible)
+        return;
+    m_cursorVisible = false;
+    emit cursorChanged();
 }
 
 void SpectrumView::mouseMoveEvent(QMouseEvent* event)
@@ -325,6 +387,9 @@ void SpectrumView::touchEvent(QTouchEvent* event)
         const double dx = points[0].position().x() - points[0].lastPosition().x();
         if (width() > 0)
             panByNm(-dx * (m_maxX - m_minX) / width());
+        inspectAtX(points[0].position().x());
+    } else if (points.size() == 1) {
+        inspectAtX(points[0].position().x());
     } else {
         m_lastPinchDistance = 0.0;
     }

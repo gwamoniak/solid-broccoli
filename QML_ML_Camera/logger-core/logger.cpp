@@ -27,7 +27,8 @@ void LogMessageHandler(QtMsgType type, const QMessageLogContext &context, const 
     {
         qDebug(logDebug()) << "File doesn't exist";
     }
-    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Append))
+        return; // Avoid recursive Qt logging from inside the message handler.
     QTextStream textStream(&outFile);
     textStream << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz ") << ",";
     switch (type)

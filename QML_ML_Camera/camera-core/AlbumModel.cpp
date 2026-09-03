@@ -6,7 +6,7 @@ using namespace std;
 AlbumModel::AlbumModel(DatabaseManager& db, QObject* parent) :
     QAbstractListModel(parent),
     m_sqlDB(db),
-    m_vAlbums(m_sqlDB.m_albumDao.albums())
+    m_vAlbums(m_sqlDB.albumDao().albums())
 {
         qDebug(logInfo()) << "Album has been created!";
 
@@ -17,8 +17,8 @@ QModelIndex AlbumModel::addAlbum(const Album& _album)
     int rowIndex = rowCount();
     beginInsertRows(QModelIndex(), rowIndex, rowIndex);
     unique_ptr<Album> newAlbum(new Album(_album));
-    m_sqlDB.m_albumDao.addAlbum(*newAlbum);
-    m_vAlbums->push_back(move(newAlbum));
+    m_sqlDB.albumDao().addAlbum(*newAlbum);
+    m_vAlbums->push_back(std::move(newAlbum));
     endInsertRows();
     return index(rowIndex, 0);
 }
@@ -97,7 +97,7 @@ bool AlbumModel::setData(const QModelIndex& _index, const QVariant& value, int r
     }
     Album& album = *m_vAlbums->at(_index.row());
     album.set_sAlbumName(value.toString());
-    m_sqlDB.m_albumDao.updateAlbum(album);
+    m_sqlDB.albumDao().updateAlbum(album);
     emit dataChanged(_index, _index);
     return true;
 }
@@ -114,7 +114,7 @@ bool AlbumModel::removeRows(int row, int count, const QModelIndex& parent)
     int countLeft = count;
     while (countLeft--) {
         const Album& album = *m_vAlbums->at(row + countLeft);
-        m_sqlDB.m_albumDao.removeAlbum(album._nAlbumID());
+        m_sqlDB.albumDao().removeAlbum(album._nAlbumID());
     }
     m_vAlbums->erase(m_vAlbums->begin() + row,
                   m_vAlbums->begin() + row + count);
@@ -134,4 +134,3 @@ bool AlbumModel::isIndexValid(const QModelIndex& _index) const
 {
     return _index.isValid() && _index.row() < rowCount();
 }
-

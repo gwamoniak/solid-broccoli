@@ -20,6 +20,8 @@ QtObject {
     property color separator:         "#2C2C30"
     property color fill:              "#242428"
     property color textOverAccent:    "#000000"
+    property color cameraBackground:  "#000000"
+    property color onCamera:          "#FFFFFF"
 
     // ── Instrument colors ──
     property color live:              "#30D158"
@@ -45,7 +47,7 @@ QtObject {
     // The actual platform default family. Never leave a font.family binding
     // as an empty string: Qt resolves "" to the first family alphabetically,
     // which on macOS is Apple Color Emoji — text turns into emoji soup.
-    property string fontName: Qt.application.font.family
+    property string fontName: "Sans Serif"
     // Monospaced font for live numeric readouts (wavelengths, counts,
     // timers) so digits don't jitter horizontally as values change.
     property string readoutFontName: "Menlo"

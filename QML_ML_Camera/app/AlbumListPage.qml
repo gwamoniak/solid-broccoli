@@ -1,4 +1,5 @@
 import QtQuick
+import solid.broccoli 1.0
 import QtQuick.Controls
 import "."
 
@@ -24,7 +25,7 @@ NavPage {
         hint: qsTr("My Album")
         onAccepted: {
             editText.focus = false
-            albumModel.addAlbumFromName(editText.text)
+            AppContext.albumModel.addAlbumFromName(editText.text)
         }
     }
 
@@ -34,7 +35,7 @@ NavPage {
         anchors.margins: Theme.screenMargin
         cellWidth: (width - Theme.gridGap) / 2
         cellHeight: cellWidth + 48
-        model: albumModel
+        model: AppContext.albumModel
 
         delegate: Item {
             width: albumGrid.cellWidth
@@ -79,7 +80,7 @@ NavPage {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        pictureModel.setAlbumId(id)
+                        AppContext.pictureModel.setAlbumId(id)
                         if (owningStack) {
                             owningStack.push("qrc:/AlbumPage.qml",
                                 { albumName: name, albumRowIndex: index, owningStack: owningStack })

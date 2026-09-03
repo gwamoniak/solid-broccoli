@@ -23,6 +23,8 @@ zero hardware thanks to a physics-based simulation library.
 - **On-device AI reports** *(optional)* — Gemma via llama.cpp writes session
   summaries grounded in deterministic peak identification; every report
   stores its exact input facts for audit. No cloud, no telemetry.
+- **Field-ready UX** — nearest-point spectrum inspection, one global error
+  toast, and the complete user manual available from Settings → User Manual.
 
 ## Documentation
 
@@ -31,7 +33,7 @@ zero hardware thanks to a physics-based simulation library.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture atlas: build targets, device-stack UML, data flows, ER schema, threading (Mermaid, canonical) |
 | [docs/architecture.html](docs/architecture.html) | The same diagrams as a styled standalone page |
 | [docs/USER_MANUAL.md](docs/USER_MANUAL.md) | Operating manual: workflows, settings, troubleshooting, data locations |
-| [SPECTRO_FIELD_READINESS_EXECPLAN.md](SPECTRO_FIELD_READINESS_EXECPLAN.md) | The active plan: model/hardware field verification, Android bring-up, hardening backlog |
+| [SPECTRO_FIELD_READINESS_EXECPLAN.md](SPECTRO_FIELD_READINESS_EXECPLAN.md) | The active plan: completed engineering hardening plus gated model/hardware/Android field verification |
 | [SPECTRO_TRICORDER_EXECPLAN.md](SPECTRO_TRICORDER_EXECPLAN.md) | The closed desktop-scope design record — every decision and its rationale |
 
 ## Build
@@ -49,6 +51,19 @@ Run the app:
 Run the test suite:
 
     ctest --test-dir QML_ML_Camera/build --output-on-failure
+
+Run the sanitizer build and the same suite (the preset file lives in the CMake
+source directory):
+
+    cd QML_ML_Camera
+    cmake --preset asan-ubsan
+    cmake --build --preset asan-ubsan
+    ctest --preset asan-ubsan
+    cd ..
+
+QML static analysis uses the registered-module tooling description:
+
+    qmllint -I QML_ML_Camera/qmltypes QML_ML_Camera/app/*.qml
 
 **A bare machine builds green.** ONNX Runtime, llama.cpp, and model weights
 are strictly optional:
